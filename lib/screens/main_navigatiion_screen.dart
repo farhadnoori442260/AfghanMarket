@@ -1,15 +1,17 @@
-import 'package:bechdal_app/constants/colors.dart';
-import 'package:bechdal_app/screens/category/category_list_screen.dart';
-import 'package:bechdal_app/screens/chat/chat_screen.dart';
-import 'package:bechdal_app/screens/home_screen.dart';
-import 'package:bechdal_app/screens/post/my_post_screen.dart';
-import 'package:bechdal_app/screens/profile_screen.dart';
 import 'package:dot_navigation_bar/dot_navigation_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import 'package:kalino_app/constants/colors.dart';
+import 'package:kalino_app/screens/category/category_list_screen.dart';
+import 'package:kalino_app/screens/chat/chat_screen.dart';
+import 'package:kalino_app/screens/home_screen.dart';
+import 'package:kalino_app/screens/post/my_post_screen.dart';
+import 'package:kalino_app/screens/profile_screen.dart';
+
 class MainNavigationScreen extends StatefulWidget {
-  static const screenId = 'main_nav_screen';
+  static const String screenId = 'main_nav_screen';
+
   const MainNavigationScreen({Key? key}) : super(key: key);
 
   @override
@@ -17,17 +19,31 @@ class MainNavigationScreen extends StatefulWidget {
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
-  List pages = [
-    const HomeScreen(),
-    const ChatScreen(),
-    const CategoryListScreen(isForForm: true),
-    const MyPostScreen(),
-    const ProfileScreen(),
-  ];
-  PageController controller = PageController();
+  late final PageController _pageController;
   int _index = 0;
 
-  _bottomNavigationBar() {
+  late final List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+    _pages = [
+      const HomeScreen(),
+      const ChatScreen(),
+      const CategoryListScreen(isForForm: true),
+      const MyPostScreen(),
+      const ProfileScreen(),
+    ];
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  Widget _buildBottomNavigationBar() {
     return Container(
       padding: EdgeInsets.zero,
       margin: EdgeInsets.zero,
@@ -45,14 +61,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           setState(() {
             _index = index;
           });
-          controller.jumpToPage(index);
+          _pageController.jumpToPage(index);
         },
         items: [
           DotNavigationBarItem(
             icon: Container(
               decoration: BoxDecoration(
-                  color: _index == 0 ? whiteColor : Colors.transparent,
-                  borderRadius: BorderRadius.circular(40)),
+                color: _index == 0 ? whiteColor : Colors.transparent,
+                borderRadius: BorderRadius.circular(40),
+              ),
               padding: const EdgeInsets.all(10),
               child: Icon(
                 Icons.home,
@@ -63,8 +80,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           DotNavigationBarItem(
             icon: Container(
               decoration: BoxDecoration(
-                  color: _index == 1 ? whiteColor : Colors.transparent,
-                  borderRadius: BorderRadius.circular(40)),
+                color: _index == 1 ? whiteColor : Colors.transparent,
+                borderRadius: BorderRadius.circular(40),
+              ),
               padding: const EdgeInsets.all(10),
               child: Icon(
                 Icons.chat,
@@ -75,8 +93,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           DotNavigationBarItem(
             icon: Container(
               decoration: BoxDecoration(
-                  color: _index == 2 ? whiteColor : Colors.transparent,
-                  borderRadius: BorderRadius.circular(40)),
+                color: _index == 2 ? whiteColor : Colors.transparent,
+                borderRadius: BorderRadius.circular(40),
+              ),
               padding: const EdgeInsets.all(10),
               child: Icon(
                 Icons.add,
@@ -87,8 +106,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           DotNavigationBarItem(
             icon: Container(
               decoration: BoxDecoration(
-                  color: _index == 3 ? whiteColor : Colors.transparent,
-                  borderRadius: BorderRadius.circular(40)),
+                color: _index == 3 ? whiteColor : Colors.transparent,
+                borderRadius: BorderRadius.circular(40),
+              ),
               padding: const EdgeInsets.all(10),
               child: Icon(
                 _index == 3 ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
@@ -99,8 +119,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           DotNavigationBarItem(
             icon: Container(
               decoration: BoxDecoration(
-                  color: _index == 4 ? whiteColor : Colors.transparent,
-                  borderRadius: BorderRadius.circular(40)),
+                color: _index == 4 ? whiteColor : Colors.transparent,
+                borderRadius: BorderRadius.circular(40),
+              ),
               padding: const EdgeInsets.all(10),
               child: Icon(
                 Icons.person,
@@ -116,18 +137,21 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        extendBody: true,
-        body: PageView.builder(
-            itemCount: pages.length,
-            controller: controller,
-            onPageChanged: (page) {
-              setState(() {
-                _index = page;
-              });
-            },
-            itemBuilder: (context, position) {
-              return pages[position];
-            }),
-        bottomNavigationBar: _bottomNavigationBar());
+      extendBody: true,
+      body: PageView.builder(
+        itemCount: _pages.length,
+        controller: _pageController,
+        physics: const BouncingScrollPhysics(),
+        onPageChanged: (page) {
+          setState(() {
+            _index = page;
+          });
+        },
+        itemBuilder: (context, position) {
+          return _pages[position];
+        },
+      ),
+      bottomNavigationBar: _buildBottomNavigationBar(),
+    );
   }
 }
