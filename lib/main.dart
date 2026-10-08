@@ -1,92 +1,111 @@
-import 'package:bechdal_app/constants/colors.dart';
-import 'package:bechdal_app/forms/common_form.dart';
-import 'package:bechdal_app/forms/sell_car_form.dart';
-import 'package:bechdal_app/forms/user_form_review.dart';
-import 'package:bechdal_app/provider/category_provider.dart';
-import 'package:bechdal_app/provider/product_provider.dart';
-import 'package:bechdal_app/screens/auth/email_verify_screen.dart';
-import 'package:bechdal_app/screens/auth/login_screen.dart';
-import 'package:bechdal_app/screens/auth/phone_auth_screen.dart';
-import 'package:bechdal_app/screens/auth/register_screen.dart';
-import 'package:bechdal_app/screens/category/product_by_category_screen.dart';
-import 'package:bechdal_app/screens/category/subcategory_screen.dart';
-import 'package:bechdal_app/screens/chat/user_chat_screen.dart';
-import 'package:bechdal_app/screens/home_screen.dart';
-import 'package:bechdal_app/screens/location_screen.dart';
-import 'package:bechdal_app/screens/main_navigatiion_screen.dart';
-import 'package:bechdal_app/screens/post/my_post_screen.dart';
-import 'package:bechdal_app/screens/product/product_details_screen.dart';
-import 'package:bechdal_app/screens/profile_screen.dart';
-import 'package:bechdal_app/screens/splash_screen.dart';
-import 'package:bechdal_app/screens/welcome_screen.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'screens/auth/reset_password_screen.dart';
-import 'screens/category/category_list_screen.dart';
-import 'screens/chat/chat_screen.dart';
+import 'package:kalino_app/constants/colors.dart';
+import 'package:kalino_app/forms/common_form.dart';
+import 'package:kalino_app/forms/sell_car_form.dart';
+import 'package:kalino_app/forms/user_form_review.dart';
+import 'package:kalino_app/provider/category_provider.dart';
+import 'package:kalino_app/provider/product_provider.dart';
+import 'package:kalino_app/screens/auth/email_verify_screen.dart';
+import 'package:kalino_app/screens/auth/login_screen.dart';
+import 'package:kalino_app/screens/auth/phone_auth_screen.dart';
+import 'package:kalino_app/screens/auth/register_screen.dart';
+import 'package:kalino_app/screens/auth/reset_password_screen.dart';
+import 'package:kalino_app/screens/category/category_list_screen.dart';
+import 'package:kalino_app/screens/category/product_by_category_screen.dart';
+import 'package:kalino_app/screens/category/subcategory_screen.dart';
+import 'package:kalino_app/screens/chat/chat_screen.dart';
+import 'package:kalino_app/screens/chat/user_chat_screen.dart';
+import 'package:kalino_app/screens/home_screen.dart';
+import 'package:kalino_app/screens/location_screen.dart';
+import 'package:kalino_app/screens/main_navigatiion_screen.dart';
+import 'package:kalino_app/screens/post/my_post_screen.dart';
+import 'package:kalino_app/screens/product/product_details_screen.dart';
+import 'package:kalino_app/screens/profile_screen.dart';
+import 'package:kalino_app/screens/splash_screen.dart';
+import 'package:kalino_app/screens/welcome_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await EasyLocalization.ensureInitialized();
   await Firebase.initializeApp();
+
   await FirebaseAppCheck.instance.activate(
     webRecaptchaSiteKey: 'recaptcha-v3-site-key',
   );
+
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(
-          create: (_) => CategoryProvider(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => ProductProvider(),
-        )
+    EasyLocalization(
+      supportedLocales: const [
+        Locale('fa'), // دری / فارسی
+        Locale('ps'), // پشتو
+        Locale('en'), // انگلیسی
       ],
-      child: const Main(),
+      path: 'assets/lang',
+      fallbackLocale: const Locale('fa'),
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider(
+            create: (_) => CategoryProvider(),
+          ),
+          ChangeNotifierProvider(
+            create: (_) => ProductProvider(),
+          ),
+        ],
+        child: const KalinoApp(),
+      ),
     ),
   );
 }
 
-class Main extends StatelessWidget {
-  const Main({Key? key}) : super(key: key);
+class KalinoApp extends StatelessWidget {
+  const KalinoApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        theme: ThemeData(
-          primaryColor: blackColor,
-          backgroundColor: whiteColor,
-          fontFamily: 'Oswald',
-          scaffoldBackgroundColor: whiteColor,
+      title: 'app_name'.tr(),
+      localizationsDelegates: context.localizationDelegates,
+      supportedLocales: context.supportedLocales,
+      locale: context.locale,
+      theme: ThemeData(
+        fontFamily: 'IRANYekan',
+        primaryColor: blackColor,
+        scaffoldBackgroundColor: whiteColor,
+        colorScheme: ColorScheme.fromSwatch().copyWith(
+          secondary: blackColor,
+          surface: whiteColor,
         ),
-        debugShowCheckedModeBanner: false,
-        initialRoute: SplashScreen.screenId,
-        routes: {
-          SplashScreen.screenId: (context) => const SplashScreen(),
-          LoginScreen.screenId: (context) => const LoginScreen(),
-          PhoneAuthScreen.screenId: (context) => const PhoneAuthScreen(),
-          LocationScreen.screenId: (context) => const LocationScreen(),
-          HomeScreen.screenId: (context) => const HomeScreen(),
-          WelcomeScreen.screenId: (context) => const WelcomeScreen(),
-          RegisterScreen.screenId: (context) => const RegisterScreen(),
-          EmailVerifyScreen.screenId: (context) => const EmailVerifyScreen(),
-          ResetPasswordScreen.screenId: (context) =>
-              const ResetPasswordScreen(),
-          CategoryListScreen.screenId: (context) => const CategoryListScreen(),
-          SubCategoryScreen.screenId: (context) => const SubCategoryScreen(),
-          MainNavigationScreen.screenId: (context) =>
-              const MainNavigationScreen(),
-          ChatScreen.screenId: (context) => const ChatScreen(),
-          MyPostScreen.screenId: (context) => const MyPostScreen(),
-          ProfileScreen.screenId: (context) => const ProfileScreen(),
-          SellCarForm.screenId: (context) => const SellCarForm(),
-          UserFormReview.screenId: (context) => const UserFormReview(),
-          CommonForm.screenId: (context) => const CommonForm(),
-          ProductDetail.screenId: (context) => const ProductDetail(),
-          ProductByCategory.screenId: (context) => const ProductByCategory(),
-          UserChatScreen.screenId: (context) => const UserChatScreen(),
-        });
+      ),
+      debugShowCheckedModeBanner: false,
+      initialRoute: SplashScreen.screenId,
+      routes: {
+        SplashScreen.screenId: (context) => const SplashScreen(),
+        LoginScreen.screenId: (context) => const LoginScreen(),
+        PhoneAuthScreen.screenId: (context) => const PhoneAuthScreen(),
+        LocationScreen.screenId: (context) => const LocationScreen(),
+        HomeScreen.screenId: (context) => const HomeScreen(),
+        WelcomeScreen.screenId: (context) => const WelcomeScreen(),
+        RegisterScreen.screenId: (context) => const RegisterScreen(),
+        EmailVerifyScreen.screenId: (context) => const EmailVerifyScreen(),
+        ResetPasswordScreen.screenId: (context) => const ResetPasswordScreen(),
+        CategoryListScreen.screenId: (context) => const CategoryListScreen(),
+        SubCategoryScreen.screenId: (context) => const SubCategoryScreen(),
+        MainNavigationScreen.screenId: (context) => const MainNavigationScreen(),
+        ChatScreen.screenId: (context) => const ChatScreen(),
+        MyPostScreen.screenId: (context) => const MyPostScreen(),
+        ProfileScreen.screenId: (context) => const ProfileScreen(),
+        SellCarForm.screenId: (context) => const SellCarForm(),
+        UserFormReview.screenId: (context) => const UserFormReview(),
+        CommonForm.screenId: (context) => const CommonForm(),
+        ProductDetail.screenId: (context) => const ProductDetail(),
+        ProductByCategory.screenId: (context) => const ProductByCategory(),
+        UserChatScreen.screenId: (context) => const UserChatScreen(),
+      },
+    );
   }
 }
