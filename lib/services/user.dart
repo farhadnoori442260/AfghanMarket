@@ -1,93 +1,152 @@
-import 'package:bechdal_app/services/auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../constants/widgets.dart';
+import 'package:kalino_app/constants/widgets.dart';
+import 'package:kalino_app/services/auth.dart';
 
 class UserService {
-  Auth authService = Auth();
-  User? user = FirebaseAuth.instance.currentUser;
+  final Auth authService = Auth();
 
+  User? get user => FirebaseAuth.instance.currentUser;
+
+  /// به‌روزرسانی اطلاعات کاربر در Firestore
   Future<void> updateFirebaseUser(
-      BuildContext context, Map<String, dynamic> data) {
-    User? user = FirebaseAuth.instance.currentUser;
-    return authService.users.doc(user!.uid).update(data).then((value) {
-      customSnackBar(context: context, content: 'Location updated on database');
-    }).catchError((error) {
-      customSnackBar(
+      BuildContext context, Map<String, dynamic> data) async {
+    final currentUser = user;
+    if (currentUser == null) return;
+
+    try {
+      await authService.users.doc(currentUser.uid).update(data);
+      if (context.mounted) {
+        customSnackBar(
           context: context,
-          content: 'location cannot be updated in database due to $error');
-    });
+          content: 'msg_location_updated'.tr(),
+        );
+      }
+    } catch (error) {
+      if (context.mounted) {
+        customSnackBar(
+          context: context,
+          content: 'msg_location_update_failed'.tr(),
+        );
+      }
+    }
   }
 
-  Future<DocumentSnapshot> getUserData() async {
-    DocumentSnapshot doc = await authService.users.doc(user!.uid).get();
+  /// دریافت اطلاعات کاربر فعلی
+  Future<DocumentSnapshot?> getUserData() async {
+    final currentUser = user;
+    if (currentUser == null) return null;
+
+    DocumentSnapshot doc = await authService.users.doc(currentUser.uid).get();
     return doc;
   }
 
-  Future<DocumentSnapshot> getSellerData(id) async {
+  /// دریافت اطلاعات فروشنده
+  Future<DocumentSnapshot> getSellerData(String id) async {
     DocumentSnapshot doc = await authService.users.doc(id).get();
     return doc;
   }
 
-  Future<DocumentSnapshot> getProductDetails(id) async {
+  /// دریافت اطلاعات جزئیات محصول
+  Future<DocumentSnapshot> getProductDetails(String id) async {
     DocumentSnapshot doc = await authService.products.doc(id).get();
     return doc;
   }
 
-  createChatRoom({required Map<String, dynamic> data}) {
-    authService.messages.doc(data['chatroomId']).set(data).catchError((error) {
+  /// ایجاد چت‌روم جدید
+  Future<void> createChatRoom({required Map<String, dynamic> data}) async {
+    try {
+      await authService.messages
+          .doc(data['chatroomId'])
+          .set(data, SetOptions(merge: true));
+    } catch (error) {
       if (kDebugMode) {
-        print(error.toString());
+        print('Error creating chat room: $error');
       }
-    });
+    }
   }
 
-  createChat({String? chatroomId, required Map<String, dynamic> message}) {
-    authService.messages
-        .doc(chatroomId)
-        .collection('chats')
-        .add(message)
-        .catchError((error) {
+  /// ارسال پیام جدید در چت
+  Future<void> createChat({
+    String? chatroomId,
+    required Map<String, dynamic> message,
+  }) async {
+    if (chatroomId == null) return;
+
+    try {
+      await authService.messages
+          .doc(chatroomId)
+          .collection('chats')
+          .add(message);
+
+      await authService.messages.doc(chatroomId).update({
+        'lastChat': message['message'],
+        'lastChatTime': message['time'],
+        'read': false,
+      });
+    } catch (error) {
       if (kDebugMode) {
-        print(error.toString());
+        print('Error sending message: $error');
       }
-    });
-    authService.messages.doc(chatroomId).update({
-      'lastChat': message['message'],
-      'lastChatTime': message['time'],
-      'read': false,
-    });
+    }
   }
 
-  getChatDetails({String? chatroomId}) async {
+  /// دریافت جریان پیام‌های یک گفتگو
+  Stream<QuerySnapshot>? getChatDetails({String? chatroomId}) {
+    if (chatroomId == null) return null;
+
     return authService.messages
         .doc(chatroomId)
         .collection('chats')
-        .orderBy('time')
+        .orderBy('time', descending: false)
         .snapshots();
   }
 
-  deleteChat({String? chatroomId}) async {
+  /// حذف گفتگو
+  Future<void> deleteChat({String? chatroomId}) async {
+    if (chatroomId == null) return;
     return authService.messages.doc(chatroomId).delete();
   }
 
-  updateFavourite(
-      {required BuildContext context,
-      required bool isLiked,
-      required String productId}) {
-    if (isLiked) {
-      authService.products.doc(productId).update({
-        'favourites': FieldValue.arrayUnion([user!.uid])
-      });
-      customSnackBar(context: context, content: 'Added to favourites');
-    } else {
-      authService.products.doc(productId).update({
-        'favourites': FieldValue.arrayRemove([user!.uid])
-      });
-      customSnackBar(context: context, content: 'Removed from favourites');
+  /// مدیریت لیست علاقه‌مندی‌های کاربر
+  Future<void> updateFavourite({
+    required BuildContext context,
+    required bool isLiked,
+    required String productId,
+  }) async {
+    final currentUser = user;
+    if (currentUser == null) return;
+
+    try {
+      if (isLiked) {
+        await authService.products.doc(productId).update({
+          'favourites': FieldValue.arrayUnion([currentUser.uid])
+        });
+        if (context.mounted) {
+          customSnackBar(
+            context: context,
+            content: 'msg_added_favourite'.tr(),
+          );
+        }
+      } else {
+        await authService.products.doc(productId).update({
+          'favourites': FieldValue.arrayRemove([currentUser.uid])
+        });
+        if (context.mounted) {
+          customSnackBar(
+            context: context,
+            content: 'msg_removed_favourite'.tr(),
+          );
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error updating favourites: $e');
+      }
     }
   }
 }
