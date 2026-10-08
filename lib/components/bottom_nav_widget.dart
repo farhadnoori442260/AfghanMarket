@@ -1,47 +1,68 @@
 import 'package:flutter/material.dart';
-import 'package:legacy_progress_dialog/legacy_progress_dialog.dart';
-
-import '../constants/colors.dart';
+import 'package:kalino_app/constants/colors.dart';
 
 class BottomNavigationWidget extends StatelessWidget {
   final bool validator;
-  final Function()? onPressed;
+  final VoidCallback? onPressed;
   final String buttonText;
-  final ProgressDialog? progressDialog;
+  final bool isLoading;
+
   const BottomNavigationWidget({
     Key? key,
     required this.validator,
     this.onPressed,
     required this.buttonText,
-    this.progressDialog,
+    this.isLoading = false,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Container(
+    return Container(
+      decoration: BoxDecoration(
         color: whiteColor,
+        boxShadow: [
+          BoxShadow(
+            color: blackColor.withOpacity(0.05),
+            offset: const Offset(0, -4),
+            blurRadius: 16,
+          ),
+        ],
+      ),
+      child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 25),
-          child: AbsorbPointer(
-            absorbing: !validator,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            height: 52,
+            width: double.infinity,
             child: ElevatedButton(
-              style: ButtonStyle(
-                  backgroundColor: validator
-                      ? MaterialStateProperty.all(secondaryColor)
-                      : MaterialStateProperty.all(disabledColor)),
-              onPressed: onPressed,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                child: Text(
-                  buttonText,
-                  style: TextStyle(
-                    color: whiteColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
+              style: ElevatedButton.styleFrom(
+                elevation: validator ? 2 : 0,
+                shadowColor: primaryColor.withOpacity(0.4),
+                backgroundColor: validator ? primaryColor : disabledColor.withOpacity(0.3),
+                foregroundColor: validator ? whiteColor : greyMediumColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
               ),
+              onPressed: (validator && !isLoading) ? onPressed : null,
+              child: isLoading
+                  ? const SizedBox(
+                      height: 22,
+                      width: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(whiteColor),
+                      ),
+                    )
+                  : Text(
+                      buttonText,
+                      style: TextStyle(
+                        color: validator ? whiteColor : greyMediumColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
             ),
           ),
         ),
