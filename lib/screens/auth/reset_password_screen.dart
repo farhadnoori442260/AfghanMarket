@@ -1,7 +1,9 @@
-import 'package:bechdal_app/components/large_heading_widget.dart';
-import 'package:bechdal_app/constants/colors.dart';
-import 'package:bechdal_app/forms/reset_form.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+
+import 'package:kalino_app/components/large_heading_widget.dart';
+import 'package:kalino_app/constants/colors.dart';
+import 'package:kalino_app/forms/reset_form.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   static const String screenId = 'reset_password_screen';
@@ -16,18 +18,28 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: whiteColor,
-      body: SingleChildScrollView(
-        child: Column(
+      appBar: AppBar(
+        backgroundColor: whiteColor,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: blackColor),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
+            children: [
               LargeHeadingWidget(
-                heading: 'Forgot Password',
-                subHeading: 'Enter yout email to continue your password reset',
-                headingTextSize: 35,
-                subheadingTextSize: 20,
+                heading: 'title_forgot_password'.tr(),
+                subHeading: 'desc_forgot_password'.tr(),
+                headingTextSize: 28,
+                subheadingTextSize: 15,
               ),
-              ResetForm(),
-            ]),
+              const SizedBox(height: 20),
+              const ResetForm(),
+            ],
+          ),
+        ),
       ),
     );
   }
