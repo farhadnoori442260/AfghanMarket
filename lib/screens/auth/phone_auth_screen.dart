@@ -1,14 +1,16 @@
-import 'package:bechdal_app/components/bottom_nav_widget.dart';
-import 'package:bechdal_app/constants/colors.dart';
-import 'package:bechdal_app/services/auth.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:legacy_progress_dialog/legacy_progress_dialog.dart';
+
+import 'package:kalino_app/components/bottom_nav_widget.dart';
+import 'package:kalino_app/constants/colors.dart';
+import 'package:kalino_app/services/auth.dart';
 
 class PhoneAuthScreen extends StatefulWidget {
   static const String screenId = 'phone_auth_screen';
   final bool isFromLogin;
+
   const PhoneAuthScreen({
     Key? key,
     this.isFromLogin = true,
@@ -19,22 +21,23 @@ class PhoneAuthScreen extends StatefulWidget {
 }
 
 class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
-  Auth authService = Auth();
+  final Auth _authService = Auth();
   late final TextEditingController _countryCodeController;
   late final TextEditingController _phoneNumberController;
   late final FocusNode _countryCodeNode;
   late final FocusNode _phoneNumberNode;
-  String counterText = '0';
-  bool validate = false;
-  bool isLoading = true;
-  String verificationIdFinal = "";
+
+  String _counterText = '0';
+  bool _validate = false;
+  final int _phoneLength = 9; // طول شماره موبایل افغانستان (بدون صفر ابتدایی)
+
   @override
   void initState() {
-    _countryCodeController = TextEditingController(text: '+91');
+    super.initState();
+    _countryCodeController = TextEditingController(text: '+93');
     _phoneNumberController = TextEditingController();
     _countryCodeNode = FocusNode();
     _phoneNumberNode = FocusNode();
-    super.initState();
   }
 
   @override
@@ -46,147 +49,139 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    ProgressDialog progressDialog = ProgressDialog(
-      context: context,
-      backgroundColor: whiteColor,
-      textColor: blackColor,
-      loadingText: 'Verifying details',
-      progressIndicatorColor: blackColor,
-    );
-    return Scaffold(
-      appBar: AppBar(
-          elevation: 0,
-          backgroundColor: whiteColor,
-          iconTheme: IconThemeData(color: blackColor),
-          title: Text(
-            widget.isFromLogin ? 'Login' : 'Signup',
-            style: TextStyle(color: blackColor),
-          )),
-      body: _body(context),
-      bottomNavigationBar: BottomNavigationWidget(
-        validator: validate,
-        buttonText: 'Next',
-        progressDialog: progressDialog,
-        onPressed: signInValidate,
-      ),
-    );
-  }
+  void _signInValidate() {
+    String phoneNumber = _phoneNumberController.text.trim();
+    if (phoneNumber.startsWith('0')) {
+      phoneNumber = phoneNumber.substring(1);
+    }
 
-  void signInValidate() {
-    String number =
-        '${_countryCodeController.text}${_phoneNumberController.text}';
+    final String fullNumber = '${_countryCodeController.text}$phoneNumber';
 
     if (kDebugMode) {
-      print(number);
+      print('Full Phone Number: $fullNumber');
     }
-    authService.verifyPhoneNumber(context, number);
+
+    _authService.verifyPhoneNumber(context, fullNumber);
   }
 
-  Widget _body(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const SizedBox(
-            height: 40,
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: whiteColor,
+      appBar: AppBar(
+        elevation: 1,
+        backgroundColor: whiteColor,
+        iconTheme: const IconThemeData(color: blackColor),
+        title: Text(
+          widget.isFromLogin ? 'title_login'.tr() : 'title_signup'.tr(),
+          style: const TextStyle(
+            color: blackColor,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
           ),
-          CircleAvatar(
-            backgroundColor: primaryColor,
-            radius: 40,
-            child: CircleAvatar(
-              backgroundColor: secondaryColor,
-              radius: 37,
-              child: Icon(
-                CupertinoIcons.person,
-                color: whiteColor,
-                size: 40,
-              ),
-            ),
-          ),
-          const SizedBox(
-            height: 12,
-          ),
-          const Text(
-            'Enter your Phone Number',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(
-            height: 10,
-          ),
-          Text(
-            'We will send confitmation code to your phone number',
-            style: TextStyle(
-              color: greyColor,
-            ),
-          ),
-          const SizedBox(
-            height: 25,
-          ),
-          Row(
+        ),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(
-                  flex: 1,
-                  child: TextFormField(
-                    focusNode: _countryCodeNode,
-                    textAlign: TextAlign.center,
-                    controller: _countryCodeController,
-                    decoration: InputDecoration(
-                        labelText: 'Country',
-                        enabled: false,
-                        contentPadding: const EdgeInsets.all(20),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8))),
-                  )),
-              const SizedBox(
-                width: 10,
+              const SizedBox(height: 30),
+              CircleAvatar(
+                backgroundColor: primaryColor,
+                radius: 40,
+                child: const CircleAvatar(
+                  backgroundColor: secondaryColor,
+                  radius: 37,
+                  child: Icon(
+                    CupertinoIcons.person_fill,
+                    color: whiteColor,
+                    size: 40,
+                  ),
+                ),
               ),
-              Expanded(
-                  flex: 3,
-                  child: Container(
-                    margin: const EdgeInsets.only(top: 20),
+              const SizedBox(height: 16),
+              Text(
+                'title_enter_phone'.tr(),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: blackColor,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'desc_enter_phone'.tr(),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: greyColor,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 30),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 90,
+                    child: TextFormField(
+                      focusNode: _countryCodeNode,
+                      textAlign: TextAlign.center,
+                      controller: _countryCodeController,
+                      readOnly: true,
+                      decoration: InputDecoration(
+                        labelText: 'label_code'.tr(),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                          horizontal: 8,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
                     child: TextFormField(
                       focusNode: _phoneNumberNode,
-                      maxLength: 10,
-                      onChanged: (value) {
-                        setState(() {
-                          counterText = value.length.toString();
-                        });
-                        if (value.length == 10) {
-                          setState(() {
-                            validate = true;
-                          });
-                        }
-                        if (value.length < 10) {
-                          setState(() {
-                            validate = false;
-                          });
-                        }
-                      },
+                      maxLength: _phoneLength,
                       controller: _phoneNumberController,
                       keyboardType: TextInputType.phone,
+                      onChanged: (value) {
+                        setState(() {
+                          _counterText = value.length.toString();
+                          _validate = value.length == _phoneLength;
+                        });
+                      },
                       decoration: InputDecoration(
-                          counterText: '$counterText/10',
-                          counterStyle: const TextStyle(fontSize: 10),
-                          labelText: 'Phone Number',
-                          hintText: 'Enter Your Phone Number',
-                          hintStyle: TextStyle(
-                            color: greyColor,
-                            fontSize: 12,
-                          ),
-                          contentPadding: const EdgeInsets.all(20),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8))),
+                        counterText: '$_counterText/$_phoneLength',
+                        counterStyle: const TextStyle(fontSize: 11),
+                        labelText: 'label_phone_number'.tr(),
+                        hintText: 'hint_phone_number'.tr(),
+                        hintStyle: const TextStyle(
+                          color: greyColor,
+                          fontSize: 13,
+                        ),
+                        contentPadding: const EdgeInsets.all(16),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
                     ),
-                  )),
+                  ),
+                ],
+              ),
             ],
-          )
-        ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: BottomNavigationWidget(
+        validator: _validate,
+        buttonText: 'btn_next'.tr(),
+        onPressed: _signInValidate,
       ),
     );
   }
