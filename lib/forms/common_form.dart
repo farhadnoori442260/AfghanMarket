@@ -1,17 +1,19 @@
 // ignore_for_file: void_checks
 
-import 'package:bechdal_app/components/bottom_nav_widget.dart';
-import 'package:bechdal_app/components/image_picker_widget.dart';
-import 'package:bechdal_app/constants/colors.dart';
-import 'package:bechdal_app/constants/validators.dart';
-import 'package:bechdal_app/constants/widgets.dart';
-import 'package:bechdal_app/forms/user_form_review.dart';
-import 'package:bechdal_app/provider/category_provider.dart';
-import 'package:bechdal_app/services/user.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:galleryimage/galleryimage.dart';
 import 'package:provider/provider.dart';
+
+import 'package:kalino_app/components/bottom_nav_widget.dart';
+import 'package:kalino_app/components/image_picker_widget.dart';
+import 'package:kalino_app/constants/colors.dart';
+import 'package:kalino_app/constants/validators.dart';
+import 'package:kalino_app/constants/widgets.dart';
+import 'package:kalino_app/forms/user_form_review.dart';
+import 'package:kalino_app/provider/category_provider.dart';
+import 'package:kalino_app/services/user.dart';
 
 class CommonForm extends StatefulWidget {
   static const String screenId = 'common_form';
@@ -22,8 +24,9 @@ class CommonForm extends StatefulWidget {
 }
 
 class _CommonFormState extends State<CommonForm> {
-  UserService firebaseUser = UserService();
+  final UserService _firebaseUser = UserService();
   final _formKey = GlobalKey<FormState>();
+
   late TextEditingController _brandController;
   late FocusNode _brandNode;
   late TextEditingController _descriptionController;
@@ -33,7 +36,7 @@ class _CommonFormState extends State<CommonForm> {
   late TextEditingController _priceController;
   late FocusNode _priceNode;
   late TextEditingController _typeController;
-  late FocusNode _typeNde;
+  late FocusNode _typeNode;
   late TextEditingController _bedroomController;
   late FocusNode _bedroomNode;
   late TextEditingController _bathroomController;
@@ -47,15 +50,29 @@ class _CommonFormState extends State<CommonForm> {
   late TextEditingController _floorsController;
   late FocusNode _floorsNode;
 
-  List accessoriesList = ['Mobile', 'Tablet'];
-  List tabletList = ['IPads', 'Samsung', 'Other Tablets'];
-  List appartmentList = ['Apartments', 'Farm Houses', 'Houses & Villas'];
-  List bedroomList = ['1', '2', '3', '3+'];
-  List bathroomList = ['1', '2', '3', '3+'];
-  List furnishList = ['Full-Furnished', 'Semi-Furnished', 'Un-Furnished'];
-  List constructionList = ['New Launch', 'Ready to Move', 'Under construction'];
+  final List<String> _accessoriesList = ['Mobile', 'Tablet'];
+  final List<String> _tabletList = ['IPads', 'Samsung', 'Other Tablets'];
+  final List<String> _appartmentList = [
+    'Apartments',
+    'Farm Houses',
+    'Houses & Villas'
+  ];
+  final List<String> _bedroomList = ['1', '2', '3', '3+'];
+  final List<String> _bathroomList = ['1', '2', '3', '3+'];
+  final List<String> _furnishList = [
+    'Full-Furnished',
+    'Semi-Furnished',
+    'Un-Furnished'
+  ];
+  final List<String> _constructionList = [
+    'New Launch',
+    'Ready to Move',
+    'Under construction'
+  ];
+
   @override
   void initState() {
+    super.initState();
     _brandController = TextEditingController();
     _brandNode = FocusNode();
     _descriptionController = TextEditingController();
@@ -65,7 +82,7 @@ class _CommonFormState extends State<CommonForm> {
     _priceController = TextEditingController();
     _priceNode = FocusNode();
     _typeController = TextEditingController();
-    _typeNde = FocusNode();
+    _typeNode = FocusNode();
     _bedroomController = TextEditingController();
     _bedroomNode = FocusNode();
     _bathroomController = TextEditingController();
@@ -78,7 +95,6 @@ class _CommonFormState extends State<CommonForm> {
     _sqftNode = FocusNode();
     _floorsController = TextEditingController();
     _floorsNode = FocusNode();
-    super.initState();
   }
 
   @override
@@ -92,7 +108,7 @@ class _CommonFormState extends State<CommonForm> {
     _priceController.dispose();
     _priceNode.dispose();
     _typeController.dispose();
-    _typeNde.dispose();
+    _typeNode.dispose();
     _bedroomController.dispose();
     _bedroomNode.dispose();
     _bathroomController.dispose();
@@ -111,23 +127,29 @@ class _CommonFormState extends State<CommonForm> {
   @override
   Widget build(BuildContext context) {
     var categoryProvider = Provider.of<CategoryProvider>(context);
+
     return Scaffold(
       appBar: AppBar(
-          elevation: 0,
-          iconTheme: IconThemeData(color: blackColor),
-          backgroundColor: whiteColor,
-          title: Text(
-            '${categoryProvider.selectedCategory} Details',
-            style: TextStyle(color: blackColor),
-          )),
-      body: formBodyWidget(context, categoryProvider),
+        elevation: 0,
+        iconTheme: const IconThemeData(color: blackColor),
+        backgroundColor: whiteColor,
+        title: Text(
+          'title_form_details'.tr(args: [categoryProvider.selectedCategory]),
+          style: const TextStyle(
+            color: blackColor,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+      ),
+      body: _buildFormBody(context, categoryProvider),
       bottomNavigationBar: BottomNavigationWidget(
-        buttonText: 'Next',
+        buttonText: 'btn_next'.tr(),
         validator: true,
         onPressed: () async {
           if (_formKey.currentState!.validate()) {
             categoryProvider.formData.addAll({
-              'seller_uid': firebaseUser.user!.uid,
+              'seller_uid': _firebaseUser.user!.uid,
               'category': categoryProvider.selectedCategory,
               'subcategory': categoryProvider.selectedSubCategory,
               'brand': _brandController.text,
@@ -147,521 +169,426 @@ class _CommonFormState extends State<CommonForm> {
               'posted_at': DateTime.now().microsecondsSinceEpoch,
               'favourites': [],
             });
+
             if (categoryProvider.imageUploadedUrls.isNotEmpty) {
               Navigator.pushNamed(context, UserFormReview.screenId);
             } else {
               customSnackBar(
-                  context: context,
-                  content: 'Please upload images to the database');
+                context: context,
+                content: 'msg_please_upload_images'.tr(),
+              );
             }
-            print(categoryProvider.formData);
+            if (kDebugMode) {
+              print(categoryProvider.formData);
+            }
           }
         },
       ),
     );
   }
 
-  brandBottomSheet(context, categoryProvider) {
-    return openBottomSheet(
+  void _showBrandBottomSheet(
+      BuildContext context, CategoryProvider categoryProvider) {
+    openBottomSheet(
       context: context,
-      appBarTitle: 'Select Brand',
+      appBarTitle: 'sheet_select_brand'.tr(),
       child: ListView.builder(
-          shrinkWrap: true,
-          itemCount: categoryProvider.doc['brands'].length,
-          itemBuilder: (BuildContext context, int index) {
-            return ListTile(
-              onTap: () {
-                setState(() {
-                  _brandController.text =
-                      categoryProvider.doc['brands'][index]['name'];
-                });
-                Navigator.pop(context);
-              },
-              title: Text(categoryProvider.doc['brands'][index]['name']),
-              leading: Image.network(
-                categoryProvider.doc['brands'][index]['img'],
-                width: 35,
-                height: 35,
-              ),
-            );
-          }),
+        shrinkWrap: true,
+        itemCount: categoryProvider.doc['brands']?.length ?? 0,
+        itemBuilder: (BuildContext context, int index) {
+          var brand = categoryProvider.doc['brands'][index];
+          return ListTile(
+            onTap: () {
+              setState(() {
+                _brandController.text = brand['name'];
+              });
+              Navigator.pop(context);
+            },
+            title: Text(brand['name']),
+            leading: Image.network(
+              brand['img'],
+              width: 35,
+              height: 35,
+              errorBuilder: (context, error, stackTrace) =>
+                  const Icon(Icons.branding_watermark_outlined),
+            ),
+          );
+        },
+      ),
     );
   }
 
-  commonBottomsheet(context, list, controller) {
-    return openBottomSheet(
+  void _showCommonBottomSheet(
+      BuildContext context, List<String> list, TextEditingController controller, String title) {
+    openBottomSheet(
       context: context,
-      appBarTitle: 'Select type',
+      appBarTitle: title,
       child: ListView.builder(
-          shrinkWrap: true,
-          itemCount: list.length,
-          itemBuilder: (BuildContext context, int index) {
-            return ListTile(
-              onTap: () {
-                setState(() {
-                  controller.text = list[index];
-                });
-                Navigator.pop(context);
-              },
-              title: Text(list[index]),
-            );
-          }),
+        shrinkWrap: true,
+        itemCount: list.length,
+        itemBuilder: (BuildContext context, int index) {
+          return ListTile(
+            onTap: () {
+              setState(() {
+                controller.text = list[index];
+              });
+              Navigator.pop(context);
+            },
+            title: Text(list[index]),
+          );
+        },
+      ),
     );
   }
 
-  formBodyWidget(BuildContext context, CategoryProvider categoryProvider) {
+  Widget _buildFormBody(
+      BuildContext context, CategoryProvider categoryProvider) {
     return SafeArea(
       child: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          child: Container(
-            padding:
-                const EdgeInsets.only(left: 20, top: 10, right: 10, bottom: 10),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${categoryProvider.selectedSubCategory}',
-                  style: TextStyle(
-                    color: blackColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 25,
-                  ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                categoryProvider.selectedSubCategory,
+                style: const TextStyle(
+                  color: blackColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 22,
                 ),
-                const SizedBox(
-                  height: 20,
-                ),
-                (categoryProvider.selectedSubCategory == 'Mobile Phones')
-                    ? InkWell(
-                        onTap: () =>
-                            brandBottomSheet(context, categoryProvider),
-                        child: TextFormField(
-                            focusNode: _brandNode,
-                            controller: _brandController,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please choose your model brand';
-                              }
-                              return null;
-                            },
-                            keyboardType: TextInputType.name,
-                            enabled: false,
-                            decoration: InputDecoration(
-                              labelText: 'Brand',
-                              errorStyle: const TextStyle(
-                                  color: Colors.red, fontSize: 10),
-                              labelStyle: TextStyle(
-                                color: greyColor,
-                                fontSize: 14,
-                              ),
-                              suffixIcon: Icon(
-                                Icons.arrow_drop_down_sharp,
-                                color: blackColor,
-                                size: 30,
-                              ),
-                              hintText: 'Enter your mobile brand',
-                              hintStyle: TextStyle(
-                                color: greyColor,
-                                fontSize: 14,
-                              ),
-                              contentPadding: const EdgeInsets.all(15),
-                            )),
-                      )
-                    : const SizedBox(),
-                (categoryProvider.selectedSubCategory == 'Accessories' ||
-                        categoryProvider.selectedSubCategory == 'Tablets' ||
-                        categoryProvider.selectedSubCategory ==
-                            'For Sale: House & Apartments' ||
-                        categoryProvider.selectedSubCategory ==
-                            'For Rent: House & Apartments')
-                    ? InkWell(
-                        onTap: () {
-                          if (categoryProvider.selectedSubCategory ==
-                              'Accessories') {
-                            return commonBottomsheet(
-                                context, accessoriesList, _typeController);
-                          }
-                          if (categoryProvider.selectedSubCategory ==
-                              'Tablets') {
-                            return commonBottomsheet(
-                                context, tabletList, _typeController);
-                          }
-                          if (categoryProvider.selectedSubCategory ==
-                                  'For Sale: House & Apartments' ||
-                              categoryProvider.selectedSubCategory ==
-                                  'For Rent: House & Apartments') {
-                            return commonBottomsheet(
-                                context, appartmentList, _typeController);
-                          }
-                        },
-                        child: TextFormField(
-                            focusNode: _typeNde,
-                            controller: _typeController,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please choose your type';
-                              }
-                              return null;
-                            },
-                            keyboardType: TextInputType.name,
-                            enabled: false,
-                            decoration: InputDecoration(
-                              labelText: 'Type*',
-                              errorStyle: const TextStyle(
-                                  color: Colors.red, fontSize: 10),
-                              labelStyle: TextStyle(
-                                color: greyColor,
-                                fontSize: 14,
-                              ),
-                              suffixIcon: Icon(
-                                Icons.arrow_drop_down_sharp,
-                                color: blackColor,
-                                size: 30,
-                              ),
-                              hintText: 'Enter your type',
-                              hintStyle: TextStyle(
-                                color: greyColor,
-                                fontSize: 14,
-                              ),
-                              contentPadding: const EdgeInsets.all(15),
-                            )),
-                      )
-                    : const SizedBox(),
-                const SizedBox(
-                  height: 10,
-                ),
-                (categoryProvider.selectedSubCategory ==
-                            'For Sale: House & Apartments' ||
-                        categoryProvider.selectedSubCategory ==
-                            'For Rent: House & Apartments')
-                    ? Column(
-                        children: [
-                          InkWell(
-                            onTap: () {
-                              // ignore: void_checks
-                              return commonBottomsheet(
-                                  context, bedroomList, _bedroomController);
-                            },
-                            child: TextFormField(
-                                focusNode: _bedroomNode,
-                                controller: _bedroomController,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please choose your bedroom';
-                                  }
-                                  return null;
-                                },
-                                keyboardType: TextInputType.name,
-                                enabled: false,
-                                decoration: InputDecoration(
-                                  labelText: 'Bedroom*',
-                                  errorStyle: const TextStyle(
-                                      color: Colors.red, fontSize: 10),
-                                  labelStyle: TextStyle(
-                                    color: greyColor,
-                                    fontSize: 14,
-                                  ),
-                                  suffixIcon: Icon(
-                                    Icons.arrow_drop_down_sharp,
-                                    color: blackColor,
-                                    size: 30,
-                                  ),
-                                  hintText: 'Enter your bedroom',
-                                  hintStyle: TextStyle(
-                                    color: greyColor,
-                                    fontSize: 14,
-                                  ),
-                                  contentPadding: const EdgeInsets.all(15),
-                                )),
-                          ),
-                          const SizedBox(
-                            height: 10,
-                          ),
-                          InkWell(
-                            onTap: () {
-                              // ignore: void_checks
-                              return commonBottomsheet(
-                                  context, bathroomList, _bathroomController);
-                            },
-                            child: TextFormField(
-                                focusNode: _bathroomNode,
-                                controller: _bathroomController,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please choose your bathroom';
-                                  }
-                                  return null;
-                                },
-                                keyboardType: TextInputType.name,
-                                enabled: false,
-                                decoration: InputDecoration(
-                                  labelText: 'Bathroom*',
-                                  errorStyle: const TextStyle(
-                                      color: Colors.red, fontSize: 10),
-                                  labelStyle: TextStyle(
-                                    color: greyColor,
-                                    fontSize: 14,
-                                  ),
-                                  suffixIcon: Icon(
-                                    Icons.arrow_drop_down_sharp,
-                                    color: blackColor,
-                                    size: 30,
-                                  ),
-                                  hintText: 'Enter your bathroom',
-                                  hintStyle: TextStyle(
-                                    color: greyColor,
-                                    fontSize: 14,
-                                  ),
-                                  contentPadding: const EdgeInsets.all(15),
-                                )),
-                          ),
-                          const SizedBox(
-                            height: 10,
-                          ),
-                          InkWell(
-                            onTap: () {
-                              return commonBottomsheet(
-                                  context, furnishList, _furnishController);
-                            },
-                            child: TextFormField(
-                                focusNode: _furnishNode,
-                                controller: _furnishController,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please choose your furnish type';
-                                  }
-                                  return null;
-                                },
-                                keyboardType: TextInputType.name,
-                                enabled: false,
-                                decoration: InputDecoration(
-                                  labelText: 'Furnishing*',
-                                  errorStyle: const TextStyle(
-                                      color: Colors.red, fontSize: 10),
-                                  labelStyle: TextStyle(
-                                    color: greyColor,
-                                    fontSize: 14,
-                                  ),
-                                  suffixIcon: Icon(
-                                    Icons.arrow_drop_down_sharp,
-                                    color: blackColor,
-                                    size: 30,
-                                  ),
-                                  hintText: 'Enter your furnish type',
-                                  hintStyle: TextStyle(
-                                    color: greyColor,
-                                    fontSize: 14,
-                                  ),
-                                  contentPadding: const EdgeInsets.all(15),
-                                )),
-                          ),
-                          const SizedBox(
-                            height: 10,
-                          ),
-                          InkWell(
-                            onTap: () {
-                              return commonBottomsheet(context,
-                                  constructionList, _constructionController);
-                            },
-                            child: TextFormField(
-                                focusNode: _constructionNode,
-                                controller: _constructionController,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please choose your construction status';
-                                  }
-                                  return null;
-                                },
-                                keyboardType: TextInputType.name,
-                                enabled: false,
-                                decoration: InputDecoration(
-                                  labelText: 'Construction Status*',
-                                  errorStyle: const TextStyle(
-                                      color: Colors.red, fontSize: 10),
-                                  labelStyle: TextStyle(
-                                    color: greyColor,
-                                    fontSize: 14,
-                                  ),
-                                  suffixIcon: Icon(
-                                    Icons.arrow_drop_down_sharp,
-                                    color: blackColor,
-                                    size: 30,
-                                  ),
-                                  hintText: 'Enter your Construction status',
-                                  hintStyle: TextStyle(
-                                    color: greyColor,
-                                    fontSize: 14,
-                                  ),
-                                  contentPadding: const EdgeInsets.all(15),
-                                )),
-                          ),
-                          const SizedBox(height: 10),
-                          TextFormField(
-                              controller: _sqftController,
-                              focusNode: _sqftNode,
-                              validator: (value) {
-                                return checkNullEmptyValidation(value, 'sqft');
-                              },
-                              keyboardType: TextInputType.number,
-                              decoration: InputDecoration(
-                                labelText: 'Sqft*',
-                                labelStyle: TextStyle(
-                                  color: greyColor,
-                                  fontSize: 14,
-                                ),
-                                errorStyle: const TextStyle(
-                                    color: Colors.red, fontSize: 10),
-                                contentPadding: const EdgeInsets.all(15),
-                                border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide:
-                                        BorderSide(color: disabledColor)),
-                              )),
-                          const SizedBox(
-                            height: 10,
-                          ),
-                          TextFormField(
-                              controller: _floorsController,
-                              focusNode: _floorsNode,
-                              validator: (value) {
-                                return checkNullEmptyValidation(
-                                    value, 'floors');
-                              },
-                              keyboardType: TextInputType.number,
-                              decoration: InputDecoration(
-                                labelText: 'Floors*',
-                                labelStyle: TextStyle(
-                                  color: greyColor,
-                                  fontSize: 14,
-                                ),
-                                errorStyle: const TextStyle(
-                                    color: Colors.red, fontSize: 10),
-                                contentPadding: const EdgeInsets.all(15),
-                                border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide:
-                                        BorderSide(color: disabledColor)),
-                              )),
-                        ],
-                      )
-                    : const SizedBox(),
-                const SizedBox(
-                  height: 10,
-                ),
-                TextFormField(
-                    controller: _titleController,
-                    focusNode: _titleNode,
-                    maxLength: 50,
-                    validator: (value) {
-                      return checkNullEmptyValidation(value, 'title');
-                    },
-                    keyboardType: TextInputType.text,
-                    decoration: InputDecoration(
-                      labelText: 'Title*',
-                      counterText:
-                          'Mention the key features, i.e Brand, Model, Type',
-                      labelStyle: TextStyle(
-                        color: greyColor,
-                        fontSize: 14,
-                      ),
-                      errorStyle:
-                          const TextStyle(color: Colors.red, fontSize: 10),
-                      contentPadding: const EdgeInsets.all(15),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: disabledColor)),
-                    )),
-                const SizedBox(
-                  height: 10,
-                ),
-                TextFormField(
-                    controller: _descriptionController,
-                    focusNode: _descriptionNode,
-                    maxLength: 50,
-                    validator: (value) {
-                      return checkNullEmptyValidation(
-                          value, 'product description');
-                    },
-                    maxLines: 3,
-                    keyboardType: TextInputType.text,
-                    decoration: InputDecoration(
-                      labelText: 'Description*',
-                      counterText: '',
-                      labelStyle: TextStyle(
-                        color: greyColor,
-                        fontSize: 14,
-                      ),
-                      errorStyle:
-                          const TextStyle(color: Colors.red, fontSize: 10),
-                      contentPadding: const EdgeInsets.all(15),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: disabledColor)),
-                    )),
-                const SizedBox(
-                  height: 20,
-                ),
-                TextFormField(
-                    controller: _priceController,
-                    focusNode: _priceNode,
-                    validator: (value) {
-                      return validatePrice(value);
-                    },
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      prefix: const Text('₹ '),
-                      labelText: 'Price*',
-                      labelStyle: TextStyle(
-                        color: greyColor,
-                        fontSize: 14,
-                      ),
-                      errorStyle:
-                          const TextStyle(color: Colors.red, fontSize: 10),
-                      contentPadding: const EdgeInsets.all(15),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: disabledColor)),
-                    )),
-                const SizedBox(
-                  height: 20,
-                ),
+              ),
+              const SizedBox(height: 16),
+
+              // انتخاب برند (مخصوص موبایل)
+              if (categoryProvider.selectedSubCategory == 'Mobile Phones')
                 InkWell(
-                  onTap: () async {
-                    if (kDebugMode) {
-                      print(categoryProvider.imageUploadedUrls.length);
-                    }
-                    return openBottomSheet(
-                        context: context, child: const ImagePickerWidget());
-                  },
-                  child: Container(
-                    alignment: Alignment.center,
-                    padding: const EdgeInsets.symmetric(vertical: 20),
-                    decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.all(Radius.circular(20)),
-                      color: Colors.grey[300],
-                    ),
-                    child: Text(
-                      categoryProvider.imageUploadedUrls.isNotEmpty
-                          ? 'Upload More Images'
-                          : 'Upload Image',
-                      style: TextStyle(
-                          color: blackColor, fontWeight: FontWeight.bold),
+                  onTap: () => _showBrandBottomSheet(context, categoryProvider),
+                  child: TextFormField(
+                    focusNode: _brandNode,
+                    controller: _brandController,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'err_select_brand'.tr();
+                      }
+                      return null;
+                    },
+                    enabled: false,
+                    decoration: InputDecoration(
+                      labelText: 'label_brand'.tr(),
+                      suffixIcon: const Icon(Icons.arrow_drop_down_sharp,
+                          color: blackColor, size: 28),
+                      hintText: 'hint_select_brand'.tr(),
+                      contentPadding: const EdgeInsets.all(15),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: greyLightColor),
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(
-                  height: 10,
+
+              // انتخاب نوع (دستگاه، لوازم جانبی یا نوع ملک)
+              if (categoryProvider.selectedSubCategory == 'Accessories' ||
+                  categoryProvider.selectedSubCategory == 'Tablets' ||
+                  categoryProvider.selectedSubCategory ==
+                      'For Sale: House & Apartments' ||
+                  categoryProvider.selectedSubCategory ==
+                      'For Rent: House & Apartments') ...[
+                const SizedBox(height: 12),
+                InkWell(
+                  onTap: () {
+                    if (categoryProvider.selectedSubCategory == 'Accessories') {
+                      _showCommonBottomSheet(
+                          context, _accessoriesList, _typeController, 'sheet_select_type'.tr());
+                    } else if (categoryProvider.selectedSubCategory == 'Tablets') {
+                      _showCommonBottomSheet(
+                          context, _tabletList, _typeController, 'sheet_select_type'.tr());
+                    } else if (categoryProvider.selectedSubCategory ==
+                            'For Sale: House & Apartments' ||
+                        categoryProvider.selectedSubCategory ==
+                            'For Rent: House & Apartments') {
+                      _showCommonBottomSheet(
+                          context, _appartmentList, _typeController, 'sheet_select_type'.tr());
+                    }
+                  },
+                  child: TextFormField(
+                    focusNode: _typeNode,
+                    controller: _typeController,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'err_select_type'.tr();
+                      }
+                      return null;
+                    },
+                    enabled: false,
+                    decoration: InputDecoration(
+                      labelText: 'label_type'.tr(),
+                      suffixIcon: const Icon(Icons.arrow_drop_down_sharp,
+                          color: blackColor, size: 28),
+                      hintText: 'hint_select_type'.tr(),
+                      contentPadding: const EdgeInsets.all(15),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: greyLightColor),
+                      ),
+                    ),
+                  ),
                 ),
-                categoryProvider.imageUploadedUrls.isNotEmpty
-                    ? GalleryImage(
-                        titleGallery: 'Uploaded Images',
-                        numOfShowImages:
-                            categoryProvider.imageUploadedUrls.length,
-                        imageUrls: categoryProvider.imageUploadedUrls)
-                    : const SizedBox(),
               ],
-            ),
+
+              // مشخصات اختصاصی املاک
+              if (categoryProvider.selectedSubCategory ==
+                      'For Sale: House & Apartments' ||
+                  categoryProvider.selectedSubCategory ==
+                      'For Rent: House & Apartments') ...[
+                const SizedBox(height: 12),
+                InkWell(
+                  onTap: () => _showCommonBottomSheet(
+                      context, _bedroomList, _bedroomController, 'sheet_select_bedroom'.tr()),
+                  child: TextFormField(
+                    focusNode: _bedroomNode,
+                    controller: _bedroomController,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'err_select_bedroom'.tr();
+                      }
+                      return null;
+                    },
+                    enabled: false,
+                    decoration: InputDecoration(
+                      labelText: 'label_bedroom'.tr(),
+                      suffixIcon: const Icon(Icons.arrow_drop_down_sharp,
+                          color: blackColor, size: 28),
+                      hintText: 'hint_select_bedroom'.tr(),
+                      contentPadding: const EdgeInsets.all(15),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: greyLightColor),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                InkWell(
+                  onTap: () => _showCommonBottomSheet(
+                      context, _bathroomList, _bathroomController, 'sheet_select_bathroom'.tr()),
+                  child: TextFormField(
+                    focusNode: _bathroomNode,
+                    controller: _bathroomController,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'err_select_bathroom'.tr();
+                      }
+                      return null;
+                    },
+                    enabled: false,
+                    decoration: InputDecoration(
+                      labelText: 'label_bathroom'.tr(),
+                      suffixIcon: const Icon(Icons.arrow_drop_down_sharp,
+                          color: blackColor, size: 28),
+                      hintText: 'hint_select_bathroom'.tr(),
+                      contentPadding: const EdgeInsets.all(15),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: greyLightColor),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                InkWell(
+                  onTap: () => _showCommonBottomSheet(
+                      context, _furnishList, _furnishController, 'sheet_select_furnish'.tr()),
+                  child: TextFormField(
+                    focusNode: _furnishNode,
+                    controller: _furnishController,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'err_select_furnish'.tr();
+                      }
+                      return null;
+                    },
+                    enabled: false,
+                    decoration: InputDecoration(
+                      labelText: 'label_furnishing'.tr(),
+                      suffixIcon: const Icon(Icons.arrow_drop_down_sharp,
+                          color: blackColor, size: 28),
+                      hintText: 'hint_select_furnish'.tr(),
+                      contentPadding: const EdgeInsets.all(15),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: greyLightColor),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                InkWell(
+                  onTap: () => _showCommonBottomSheet(
+                      context, _constructionList, _constructionController, 'sheet_select_construction'.tr()),
+                  child: TextFormField(
+                    focusNode: _constructionNode,
+                    controller: _constructionController,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'err_select_construction'.tr();
+                      }
+                      return null;
+                    },
+                    enabled: false,
+                    decoration: InputDecoration(
+                      labelText: 'label_construction_status'.tr(),
+                      suffixIcon: const Icon(Icons.arrow_drop_down_sharp,
+                          color: blackColor, size: 28),
+                      hintText: 'hint_select_construction'.tr(),
+                      contentPadding: const EdgeInsets.all(15),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: greyLightColor),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _sqftController,
+                  focusNode: _sqftNode,
+                  validator: (value) =>
+                      checkNullEmptyValidation(value, 'sqft'),
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'label_sqft'.tr(),
+                    contentPadding: const EdgeInsets.all(15),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: greyLightColor),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _floorsController,
+                  focusNode: _floorsNode,
+                  validator: (value) =>
+                      checkNullEmptyValidation(value, 'floors'),
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'label_floors'.tr(),
+                    contentPadding: const EdgeInsets.all(15),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: greyLightColor),
+                    ),
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 16),
+
+              // عنوان آگهی
+              TextFormField(
+                controller: _titleController,
+                focusNode: _titleNode,
+                maxLength: 50,
+                validator: (value) => checkNullEmptyValidation(value, 'title'),
+                keyboardType: TextInputType.text,
+                decoration: InputDecoration(
+                  labelText: 'label_title'.tr(),
+                  helperText: 'hint_title_helper'.tr(),
+                  contentPadding: const EdgeInsets.all(15),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: greyLightColor),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // توضیحات آگهی
+              TextFormField(
+                controller: _descriptionController,
+                focusNode: _descriptionNode,
+                maxLength: 500,
+                validator: (value) =>
+                    checkNullEmptyValidation(value, 'product description'),
+                maxLines: 4,
+                keyboardType: TextInputType.multiline,
+                decoration: InputDecoration(
+                  labelText: 'label_description'.tr(),
+                  contentPadding: const EdgeInsets.all(15),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: greyLightColor),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // قیمت
+              TextFormField(
+                controller: _priceController,
+                focusNode: _priceNode,
+                validator: (value) => validatePrice(value),
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  suffixText: 'currency_symbol'.tr(),
+                  labelText: 'label_price'.tr(),
+                  contentPadding: const EdgeInsets.all(15),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: greyLightColor),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // دکمه آپلود تصویر
+              InkWell(
+                onTap: () async {
+                  return openBottomSheet(
+                    context: context,
+                    child: const ImagePickerWidget(),
+                  );
+                },
+                child: Container(
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    color: primaryLightColor.withOpacity(0.5),
+                    border: Border.all(color: primaryColor.withOpacity(0.5)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.add_a_photo_outlined, color: primaryColor),
+                      const SizedBox(width: 8),
+                      Text(
+                        categoryProvider.imageUploadedUrls.isNotEmpty
+                            ? 'btn_add_more_images'.tr()
+                            : 'btn_select_image'.tr(),
+                        style: const TextStyle(
+                          color: primaryColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // پیش‌نمایش گالری تصاویر آپلودشده
+              if (categoryProvider.imageUploadedUrls.isNotEmpty)
+                GalleryImage(
+                  titleGallery: 'title_uploaded_images'.tr(),
+                  numOfShowImages: categoryProvider.imageUploadedUrls.length,
+                  imageUrls: categoryProvider.imageUploadedUrls,
+                ),
+            ],
           ),
         ),
       ),
