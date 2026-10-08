@@ -1,19 +1,22 @@
-import 'package:bechdal_app/components/large_heading_widget.dart';
-import 'package:bechdal_app/screens/main_navigatiion_screen.dart';
-import 'package:bechdal_app/constants/colors.dart';
-import 'package:bechdal_app/constants/widgets.dart';
-import 'package:bechdal_app/services/user.dart';
-import 'package:bechdal_app/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:csc_picker/csc_picker.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+
+import 'package:kalino_app/components/large_heading_widget.dart';
+import 'package:kalino_app/constants/colors.dart';
+import 'package:kalino_app/constants/widgets.dart';
+import 'package:kalino_app/screens/main_navigation_screen.dart';
+import 'package:kalino_app/services/user.dart';
+import 'package:kalino_app/utils.dart';
 
 class LocationScreen extends StatefulWidget {
   final bool? onlyPop;
   final String? popToScreen;
   static const String screenId = 'location_screen';
+
   const LocationScreen({
     this.popToScreen,
     this.onlyPop,
@@ -28,32 +31,40 @@ class _LocationScreenState extends State<LocationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: null,
-        body: _body(context),
-        bottomNavigationBar: BottomLocationPermissionWidget(
-            onlyPop: widget.onlyPop, popToScreen: widget.popToScreen ?? ''));
+      backgroundColor: whiteColor,
+      appBar: null,
+      body: _body(context),
+      bottomNavigationBar: BottomLocationPermissionWidget(
+        onlyPop: widget.onlyPop,
+        popToScreen: widget.popToScreen ?? '',
+      ),
+    );
   }
 
-  Widget _body(context) {
-    return Column(
-      children: [
-        const LargeHeadingWidget(
-            heading: 'Choose Location',
-            subheadingTextSize: 16,
-            headingTextSize: 30,
-            subHeading:
-                'To continue, we need to know your sell/buy location so that we can further assist you'),
-        const SizedBox(
-          height: 20,
+  Widget _body(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            LargeHeadingWidget(
+              heading: 'location_choose_title'.tr(),
+              subheadingTextSize: 15,
+              headingTextSize: 28,
+              subHeading: 'location_choose_subheading'.tr(),
+            ),
+            const SizedBox(height: 30),
+            Expanded(
+              child: Center(
+                child: Lottie.asset(
+                  'assets/lottie/location_lottie.json',
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ],
         ),
-        SizedBox(
-          height: 300,
-          width: 300,
-          child: Lottie.asset(
-            'assets/lottie/location_lottie.json',
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -61,6 +72,7 @@ class _LocationScreenState extends State<LocationScreen> {
 class BottomLocationPermissionWidget extends StatefulWidget {
   final bool? onlyPop;
   final String popToScreen;
+
   const BottomLocationPermissionWidget({
     required this.popToScreen,
     this.onlyPop,
@@ -74,213 +86,240 @@ class BottomLocationPermissionWidget extends StatefulWidget {
 
 class _BottomLocationPermissionWidgetState
     extends State<BottomLocationPermissionWidget> {
-  UserService firebaseUser = UserService();
+  final UserService firebaseUser = UserService();
+
+  void _navigateNext(BuildContext context) {
+    if (widget.onlyPop == true) {
+      if (widget.popToScreen.isNotEmpty) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          widget.popToScreen,
+          (route) => false,
+        );
+      } else {
+        Navigator.of(context).pop();
+      }
+    } else {
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        MainNavigationScreen.screenId,
+        (route) => false,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      padding: const EdgeInsets.symmetric(vertical: 20),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: roundedButton(
-          context: context,
-          text: 'Choose Location',
-          bgColor: secondaryColor,
-          onPressed: () {
-            openLocationBottomsheet(context);
-          }),
+        context: context,
+        text: 'location_choose_title'.tr(),
+        bgColor: secondaryColor,
+        onPressed: () {
+          openLocationBottomSheet(context);
+        },
+      ),
     );
   }
 
-  openLocationBottomsheet(BuildContext context) {
+  void openLocationBottomSheet(BuildContext context) {
     String countryValue = '';
     String stateValue = '';
     String cityValue = '';
     String address = '';
     String manualAddress = '';
-    loadingDialogBox(context, 'Fetching details..');
+
+    loadingDialogBox(context, 'msg_fetching_details'.tr());
+
     getLocationAndAddress(context).then((location) {
       if (location != null) {
-        Navigator.pop(context);
-        setState(() {
-          address = location;
-        });
+        Navigator.pop(context); // بستن دایلۆگ Loading
+        address = location;
+
         showModalBottomSheet(
-            isScrollControlled: true,
-            enableDrag: true,
-            context: context,
-            builder: (context) {
-              return Container(
-                color: whiteColor,
-                child: Column(
-                  children: [
-                    const SizedBox(
-                      height: 30,
-                    ),
-                    AppBar(
-                      automaticallyImplyLeading: false,
-                      iconTheme: IconThemeData(
-                        color: blackColor,
-                      ),
-                      elevation: 1,
-                      backgroundColor: whiteColor,
-                      title: Row(children: [
-                        IconButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                            icon: const Icon(
-                              Icons.clear,
-                            )),
-                        const SizedBox(
-                          width: 10,
-                        ),
-                        Text(
-                          'Select Location',
-                          style: TextStyle(color: blackColor),
-                        )
-                      ]),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 10, horizontal: 20),
-                      child: TextFormField(
-                        decoration: InputDecoration(
-                            suffixIcon: const Icon(Icons.search),
-                            hintText: 'Select city, area or neighbourhood',
-                            hintStyle: TextStyle(
-                              color: greyColor,
-                              fontSize: 12,
+          isScrollControlled: true,
+          enableDrag: true,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          context: context,
+          builder: (modalContext) {
+            return StatefulBuilder(
+              builder: (BuildContext context, StateSetter setModalState) {
+                return Container(
+                  color: whiteColor,
+                  height: MediaQuery.of(context).size.height * 0.85,
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 10),
+                      AppBar(
+                        automaticallyImplyLeading: false,
+                        iconTheme: const IconThemeData(color: blackColor),
+                        elevation: 0,
+                        backgroundColor: whiteColor,
+                        title: Row(
+                          children: [
+                            IconButton(
+                              onPressed: () {
+                                Navigator.pop(modalContext);
+                              },
+                              icon: const Icon(Icons.clear),
                             ),
-                            contentPadding: const EdgeInsets.all(20),
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8))),
-                      ),
-                    ),
-                    ListTile(
-                      onTap: () async {
-                        loadingDialogBox(context, 'Updating location..');
-                        await getCurrentLocation(
-                                context, serviceEnabled, permission)
-                            .then((value) {
-                          if (value != null) {
-                            firebaseUser.updateFirebaseUser(context, {
-                              'location':
-                                  GeoPoint(value.latitude, value.longitude),
-                              'address': address
-                            }).then((value) {
-                              return (widget.onlyPop == true)
-                                  ? (widget.popToScreen.isNotEmpty)
-                                      ? Navigator.of(context)
-                                          .pushNamedAndRemoveUntil(
-                                              widget.popToScreen,
-                                              (route) => false)
-                                      : Navigator.of(context)
-                                          .pushNamedAndRemoveUntil(
-                                              MainNavigationScreen.screenId,
-                                              (route) => false)
-                                  : Navigator.of(context)
-                                      .pushNamedAndRemoveUntil(
-                                          MainNavigationScreen.screenId,
-                                          (route) => false);
-                            });
-                          }
-                        });
-                      },
-                      horizontalTitleGap: 0,
-                      leading: Icon(
-                        Icons.my_location,
-                        color: secondaryColor,
-                      ),
-                      title: Text(
-                        'Use current Location',
-                        style: TextStyle(
-                          color: secondaryColor,
-                          fontWeight: FontWeight.bold,
+                            const SizedBox(width: 10),
+                            Text(
+                              'location_select_title'.tr(),
+                              style: const TextStyle(
+                                color: blackColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      subtitle: Text(
-                        address == '' ? 'Fetch current Location' : address,
-                        style: TextStyle(
-                          color: greyColor,
-                          fontSize: 10,
+                      Expanded(
+                        child: SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 10, horizontal: 20),
+                                child: TextFormField(
+                                  decoration: InputDecoration(
+                                    suffixIcon: const Icon(Icons.search),
+                                    hintText: 'location_search_hint'.tr(),
+                                    hintStyle: const TextStyle(
+                                      color: greyColor,
+                                      fontSize: 12,
+                                    ),
+                                    contentPadding: const EdgeInsets.all(16),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              ListTile(
+                                onTap: () async {
+                                  loadingDialogBox(
+                                      modalContext, 'msg_updating_location'.tr());
+                                  await getCurrentLocation(
+                                          modalContext, serviceEnabled, permission)
+                                      .then((value) {
+                                    if (value != null) {
+                                      firebaseUser.updateFirebaseUser(
+                                          modalContext, {
+                                        'location': GeoPoint(
+                                            value.latitude, value.longitude),
+                                        'address': address
+                                      }).then((_) {
+                                        Navigator.pop(modalContext); // بستن دایالوگ
+                                        Navigator.pop(modalContext); // بستن باتم‌شیت
+                                        _navigateNext(context);
+                                      });
+                                    } else {
+                                      Navigator.pop(modalContext);
+                                    }
+                                  });
+                                },
+                                horizontalTitleGap: 0,
+                                leading: const Icon(
+                                  Icons.my_location,
+                                  color: secondaryColor,
+                                ),
+                                title: Text(
+                                  'location_use_current'.tr(),
+                                  style: const TextStyle(
+                                    color: secondaryColor,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  address.isEmpty
+                                      ? 'location_fetch_current'.tr()
+                                      : address,
+                                  style: const TextStyle(
+                                    color: greyColor,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ),
+                              const Divider(),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 10, horizontal: 20),
+                                child: Text(
+                                  'location_choose_city'.tr(),
+                                  style: const TextStyle(
+                                    color: blackColor,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 10, horizontal: 20),
+                                child: CSCPicker(
+                                  layout: Layout.vertical,
+                                  defaultCountry: DefaultCountry.Afghanistan,
+                                  flagState: CountryFlag.DISABLE,
+                                  dropdownDecoration: BoxDecoration(
+                                    border: Border.all(color: greyColor),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  onCountryChanged: (value) {
+                                    setModalState(() {
+                                      countryValue = value;
+                                    });
+                                  },
+                                  onStateChanged: (value) {
+                                    setModalState(() {
+                                      if (value != null) {
+                                        stateValue = value;
+                                      }
+                                    });
+                                  },
+                                  onCityChanged: (value) async {
+                                    if (value != null) {
+                                      setModalState(() {
+                                        cityValue = value;
+                                        manualAddress = "$cityValue, $stateValue";
+                                      });
+
+                                      loadingDialogBox(
+                                          modalContext, 'msg_updating_location'.tr());
+
+                                      firebaseUser.updateFirebaseUser(
+                                          modalContext, {
+                                        'address': manualAddress,
+                                        'state': stateValue,
+                                        'city': cityValue,
+                                        'country': countryValue
+                                      }).then((_) {
+                                        if (kDebugMode) {
+                                          print('$manualAddress inside manual selection');
+                                        }
+                                        Navigator.pop(modalContext); // بستن دایالوگ
+                                        Navigator.pop(modalContext); // بستن باتم‌شیت
+                                        _navigateNext(context);
+                                      });
+                                    }
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    Container(
-                      alignment: Alignment.centerLeft,
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 10, horizontal: 20),
-                      child: Text(
-                        'Choose City',
-                        textAlign: TextAlign.start,
-                        style: TextStyle(
-                            color: blackColor,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 10, horizontal: 20),
-                      child: CSCPicker(
-                        layout: Layout.vertical,
-                        defaultCountry: DefaultCountry.India,
-                        flagState: CountryFlag.DISABLE,
-                        dropdownDecoration:
-                            const BoxDecoration(shape: BoxShape.rectangle),
-                        onCountryChanged: (value) async {
-                          setState(() {
-                            countryValue = value;
-                          });
-                        },
-                        onStateChanged: (value) async {
-                          setState(() {
-                            if (value != null) {
-                              stateValue = value;
-                            }
-                          });
-                        },
-                        onCityChanged: (value) async {
-                          setState(() {
-                            if (value != null) {
-                              cityValue = value;
-                              manualAddress = "$cityValue, $stateValue";
-                              print(manualAddress);
-                            }
-                          });
-                          if (value != null) {
-                            firebaseUser.updateFirebaseUser(context, {
-                              'address': manualAddress,
-                              'state': stateValue,
-                              'city': cityValue,
-                              'country': countryValue
-                            }).then((value) {
-                              if (kDebugMode) {
-                                print(
-                                    manualAddress + 'inside manual selection');
-                              }
-                              return (widget.onlyPop == true)
-                                  ? (widget.popToScreen.isNotEmpty)
-                                      ? Navigator.of(context)
-                                          .pushNamedAndRemoveUntil(
-                                              widget.popToScreen,
-                                              (route) => false)
-                                      : Navigator.of(context)
-                                          .pushNamedAndRemoveUntil(
-                                              MainNavigationScreen.screenId,
-                                              (route) => false)
-                                  : Navigator.of(context)
-                                      .pushNamedAndRemoveUntil(
-                                          MainNavigationScreen.screenId,
-                                          (route) => false);
-                            });
-                          }
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            });
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
       } else {
         Navigator.pop(context);
       }
