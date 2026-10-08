@@ -1,52 +1,74 @@
-import 'package:bechdal_app/constants/colors.dart';
-import 'package:bechdal_app/models/popup_menu_model.dart';
-import 'package:bechdal_app/services/user.dart';
 import 'package:custom_pop_up_menu/custom_pop_up_menu.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-loadingDialogBox(BuildContext context, String loadingMessage) {
+import 'package:kalino_app/constants/colors.dart';
+import 'package:kalino_app/models/popup_menu_model.dart';
+import 'package:kalino_app/services/user.dart';
+
+/// دیالوگ بارگذاری (Loading Dialog)
+void loadingDialogBox(BuildContext context, String loadingMessage) {
   AlertDialog alert = AlertDialog(
-    content: Row(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    content: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          CircularProgressIndicator(
-            color: secondaryColor,
+          const CircularProgressIndicator(
+            color: primaryColor,
           ),
-          const SizedBox(
-            width: 30,
-          ),
-          Text(
-            loadingMessage,
-            style: TextStyle(
-              color: blackColor,
+          const SizedBox(width: 24),
+          Expanded(
+            child: Text(
+              loadingMessage,
+              style: const TextStyle(
+                color: blackColor,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          )
-        ]),
+          ),
+        ],
+      ),
+    ),
   );
 
   showDialog(
-      barrierDismissible: false,
-      context: context,
-      builder: (BuildContext context) {
-        return alert;
-      });
+    barrierDismissible: false,
+    context: context,
+    builder: (BuildContext context) {
+      return alert;
+    },
+  );
 }
 
-customSnackBar({required BuildContext context, required String content}) {
-  return ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-    backgroundColor: blackColor,
-    content: Text(
-      content,
-      style: TextStyle(color: whiteColor, letterSpacing: 0.5),
+/// نمایش پیام شناور (Custom SnackBar)
+ScaffoldFeatureController<SnackBar, SnackBarClosedReason> customSnackBar({
+  required BuildContext context,
+  required String content,
+}) {
+  return ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      backgroundColor: blackColor,
+      content: Text(
+        content,
+        style: const TextStyle(
+          color: whiteColor,
+          fontSize: 14,
+        ),
+      ),
     ),
-  ));
+  );
 }
 
+/// دکمه اصلی برنامه (Rounded Button)
 Widget roundedButton({
-  context,
+  BuildContext? context,
   required Color? bgColor,
-  required Function()? onPressed,
+  required VoidCallback? onPressed,
   Color? textColor,
   double? width,
   double? heightPadding,
@@ -56,190 +78,198 @@ Widget roundedButton({
   return SizedBox(
     width: width ?? double.infinity,
     child: ElevatedButton(
-      style: ButtonStyle(
-          shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-            RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18.0),
-              side: BorderSide(
-                color: borderColor ?? secondaryColor,
-              ),
-            ),
+      style: ElevatedButton.styleFrom(
+        elevation: 0,
+        backgroundColor: bgColor ?? primaryColor,
+        foregroundColor: textColor ?? whiteColor,
+        padding: EdgeInsets.symmetric(vertical: heightPadding ?? 14),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0),
+          side: BorderSide(
+            color: borderColor ?? Colors.transparent,
           ),
-          backgroundColor: MaterialStateProperty.all(bgColor)),
+        ),
+      ),
       onPressed: onPressed,
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: heightPadding ?? 15),
-        child: Text(
-          text!,
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: textColor,
-          ),
+      child: Text(
+        text ?? '',
+        style: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.bold,
+          color: textColor ?? whiteColor,
         ),
       ),
     ),
   );
 }
 
-wrongDetailsAlertBox(String text, BuildContext context) {
+/// دیالوگ پیام خطا یا هشدار (Alert Box)
+void wrongDetailsAlertBox(String text, BuildContext context) {
   AlertDialog alert = AlertDialog(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     content: Text(
       text,
-      style: TextStyle(
+      style: const TextStyle(
         color: blackColor,
+        fontSize: 14,
       ),
     ),
     actions: [
       TextButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: const Text(
-            'Ok',
-          )),
+        onPressed: () {
+          Navigator.pop(context);
+        },
+        child: Text(
+          'btn_ok'.tr(),
+          style: const TextStyle(
+            color: primaryColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
     ],
   );
 
   showDialog(
-      barrierDismissible: false,
-      context: context,
-      builder: (BuildContext context) {
-        return alert;
-      });
+    barrierDismissible: false,
+    context: context,
+    builder: (BuildContext context) {
+      return alert;
+    },
+  );
 }
 
-openBottomSheet(
-    {required BuildContext context,
-    required Widget child,
-    String? appBarTitle,
-    double? height}) {
-  return showModalBottomSheet(
-      backgroundColor: Colors.transparent,
-      enableDrag: false,
-      isDismissible: false,
-      isScrollControlled: true,
-      context: context,
-      builder: (BuildContext context) {
-        return SingleChildScrollView(
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 10, bottom: 15),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        shape: const CircleBorder(),
-                        padding: const EdgeInsets.all(10),
-                        primary: Colors.white,
-                      ),
-                      child: Icon(Icons.close, color: blackColor),
-                    ),
-                  ),
-                ],
+/// نمایش صفحه کشویی از پایین (Bottom Sheet)
+void openBottomSheet({
+  required BuildContext context,
+  required Widget child,
+  String? appBarTitle,
+  double? height,
+}) {
+  showModalBottomSheet(
+    backgroundColor: Colors.transparent,
+    enableDrag: true,
+    isDismissible: true,
+    isScrollControlled: true,
+    context: context,
+    builder: (BuildContext context) {
+      return Container(
+        decoration: const BoxDecoration(
+          color: whiteColor,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.only(top: 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar baraye visual feedback
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: greyLightColor,
+                borderRadius: BorderRadius.circular(2),
               ),
-              appBarTitle != null
-                  ? Container(
-                      color: Colors.transparent,
-                      child: AppBar(
-                        automaticallyImplyLeading: false,
-                        backgroundColor: secondaryColor,
-                        title: Text(
-                          appBarTitle,
-                          style: TextStyle(color: whiteColor, fontSize: 18),
-                        ),
+            ),
+            const SizedBox(height: 12),
+            if (appBarTitle != null) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      appBarTitle,
+                      style: const TextStyle(
+                        color: blackColor,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
-                    )
-                  : const SizedBox(),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                        maxHeight:
-                            height ?? MediaQuery.of(context).size.height / 2),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: whiteColor,
-                      ),
-                      child: child,
                     ),
-                  ),
-                ],
+                    IconButton(
+                      icon: const Icon(Icons.close, color: blackColor),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
               ),
+              const Divider(color: dividerColor),
             ],
-          ),
-        );
-      });
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: height ?? MediaQuery.of(context).size.height * 0.6,
+              ),
+              child: child,
+            ),
+          ],
+        ),
+      );
+    },
+  );
 }
 
-customPopUpMenu({
+/// منوی پاپ آپ گفتگوها (Custom PopUp Menu)
+Widget customPopUpMenu({
   required BuildContext context,
   required String? chatroomId,
 }) {
   CustomPopupMenuController controller = CustomPopupMenuController();
   UserService firebaseUser = UserService();
+
   List<PopUpMenuModel> menuItems = [
-    PopUpMenuModel('Delete', Icons.delete),
-    PopUpMenuModel('Mark Sold', Icons.done),
+    PopUpMenuModel('menu_delete_chat'.tr(), Icons.delete_outline),
+    PopUpMenuModel('menu_mark_sold'.tr(), Icons.check_circle_outline),
   ];
+
   return CustomPopupMenu(
     menuBuilder: () => ClipRRect(
-      borderRadius: BorderRadius.circular(5),
+      borderRadius: BorderRadius.circular(12),
       child: Container(
         color: whiteColor,
         child: IntrinsicWidth(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: menuItems
-                .map(
-                  (item) => GestureDetector(
-                    behavior: HitTestBehavior.translucent,
-                    onTap: () {
-                      if (menuItems.indexOf(item) == 0) {
-                        firebaseUser.deleteChat(chatroomId: chatroomId);
-                        customSnackBar(
-                            context: context,
-                            content: 'Chat successfully deleted..');
-                      } else {
-                        print('Mark Sold');
-                      }
-                      controller.hideMenu();
-                    },
-                    child: Container(
-                      height: 40,
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        children: <Widget>[
-                          Icon(
-                            item.icon,
-                            size: 15,
-                            color: blackColor,
-                          ),
-                          Expanded(
-                            child: Container(
-                              margin: const EdgeInsets.only(left: 10),
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              child: Text(
-                                item.title,
-                                style: TextStyle(
-                                  color: blackColor,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+            children: menuItems.asMap().entries.map((entry) {
+              int index = entry.key;
+              PopUpMenuModel item = entry.value;
+
+              return InkWell(
+                onTap: () {
+                  if (index == 0) {
+                    firebaseUser.deleteChat(chatroomId: chatroomId);
+                    customSnackBar(
+                      context: context,
+                      content: 'msg_chat_deleted'.tr(),
+                    );
+                  } else {
+                    // Mark as Sold Action
+                  }
+                  controller.hideMenu();
+                },
+                child: Container(
+                  height: 44,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: <Widget>[
+                      Icon(
+                        item.icon,
+                        size: 20,
+                        color: index == 0 ? errorColor : blackColor,
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      Text(
+                        item.title,
+                        style: TextStyle(
+                          color: index == 0 ? errorColor : blackColor,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
-                )
-                .toList(),
+                ),
+              );
+            }).toList(),
           ),
         ),
       ),
@@ -247,9 +277,9 @@ customPopUpMenu({
     pressType: PressType.singleClick,
     verticalMargin: -10,
     controller: controller,
-    child: Container(
-      padding: const EdgeInsets.all(20),
-      child: Icon(Icons.more_vert_sharp, color: blackColor),
+    child: const Padding(
+      padding: EdgeInsets.all(12),
+      child: Icon(Icons.more_vert, color: blackColor),
     ),
   );
 }
