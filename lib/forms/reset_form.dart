@@ -1,11 +1,13 @@
-import 'package:bechdal_app/constants/colors.dart';
-import 'package:bechdal_app/constants/validators.dart';
-import 'package:bechdal_app/constants/widgets.dart';
-import 'package:bechdal_app/screens/auth/login_screen.dart';
-import 'package:bechdal_app/services/auth.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
+import 'package:kalino_app/constants/colors.dart';
+import 'package:kalino_app/constants/validators.dart';
+import 'package:kalino_app/constants/widgets.dart';
+import 'package:kalino_app/screens/auth/login_screen.dart';
+import 'package:kalino_app/services/auth.dart';
 
 class ResetForm extends StatefulWidget {
   const ResetForm({
@@ -17,15 +19,19 @@ class ResetForm extends StatefulWidget {
 }
 
 class _ResetFormState extends State<ResetForm> {
-  Auth authService = Auth();
+  final Auth _authService = Auth();
+  final _formKey = GlobalKey<FormState>();
+
   late final TextEditingController _emailController;
   late final FocusNode _emailNode;
-  final _formKey = GlobalKey<FormState>();
+
+  bool _isLoading = false;
+
   @override
   void initState() {
+    super.initState();
     _emailController = TextEditingController();
     _emailNode = FocusNode();
-    super.initState();
   }
 
   @override
@@ -40,54 +46,84 @@ class _ResetFormState extends State<ResetForm> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 20,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Form(
             key: _formKey,
             child: Column(
               children: [
+                // فیلد دریافت ایمیل
                 TextFormField(
                   focusNode: _emailNode,
                   controller: _emailController,
                   validator: (value) {
                     return validateEmail(
-                        value, EmailValidator.validate(_emailController.text));
+                      value,
+                      EmailValidator.validate(_emailController.text),
+                    );
                   },
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
-                      labelText: 'Email',
-                      hintText: 'Enter your Email',
-                      hintStyle: TextStyle(
-                        color: greyColor,
-                        fontSize: 12,
+                    prefixIcon: const Icon(Icons.email_outlined, color: greyColor),
+                    labelText: 'label_email'.tr(),
+                    hintText: 'hint_enter_email'.tr(),
+                    hintStyle: const TextStyle(
+                      color: greyColor,
+                      fontSize: 12,
+                    ),
+                    contentPadding: const EdgeInsets.all(18),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 25),
+
+                // دکمه ارسال لینک بازیابی
+                _isLoading
+                    ? const CircularProgressIndicator(color: primaryColor)
+                    : roundedButton(
+                        context: context,
+                        bgColor: primaryColor,
+                        text: 'btn_send_reset_link'.tr(),
+                        textColor: whiteColor,
+                        onPressed: () async {
+                          if (_formKey.currentState!.validate()) {
+                            setState(() {
+                              _isLoading = true;
+                            });
+
+                            try {
+                              await FirebaseAuth.instance.sendPasswordResetEmail(
+                                email: _emailController.text.trim(),
+                              );
+
+                              if (mounted) {
+                                customSnackBar(
+                                  context: context,
+                                  content: 'msg_reset_link_sent'.tr(),
+                                );
+                                Navigator.pushReplacementNamed(
+                                  context,
+                                  LoginScreen.screenId,
+                                );
+                              }
+                            } on FirebaseAuthException catch (e) {
+                              if (mounted) {
+                                customSnackBar(
+                                  context: context,
+                                  content: e.message ?? 'msg_reset_failed'.tr(),
+                                );
+                              }
+                            } finally {
+                              if (mounted) {
+                                setState(() {
+                                  _isLoading = false;
+                                });
+                              }
+                            }
+                          }
+                        },
                       ),
-                      contentPadding: const EdgeInsets.all(20),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8))),
-                ),
-                const SizedBox(
-                  height: 25,
-                ),
-                roundedButton(
-                    context: context,
-                    bgColor: secondaryColor,
-                    text: 'Send Reset Link',
-                    textColor: whiteColor,
-                    onPressed: () async {
-                      if (_formKey.currentState!.validate()) {
-                        FirebaseAuth.instance
-                            .sendPasswordResetEmail(
-                                email: _emailController.text)
-                            .then((value) {
-                          customSnackBar(
-                              context: context,
-                              content: 'Reset email sent to your email');
-                          Navigator.pushReplacementNamed(
-                              context, LoginScreen.screenId);
-                        });
-                      }
-                    }),
               ],
             ),
           ),
