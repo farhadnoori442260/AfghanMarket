@@ -1,78 +1,98 @@
-import 'package:bechdal_app/constants/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:kalino_app/constants/colors.dart';
 
 class CustomIconButton extends StatelessWidget {
   final String? text;
   final String? imageIcon;
   final IconData? icon;
   final Color? imageOrIconColor;
-  final double? imageOrIconRadius;
+  final double? imageOrIconSize;
   final Color? bgColor;
+  final Color? textColor;
   final EdgeInsets? padding;
+  final VoidCallback? onTap;
+  final double? borderRadius;
+  final Border? border;
+
   const CustomIconButton({
     Key? key,
     this.text,
     this.imageIcon,
     this.icon,
     this.imageOrIconColor,
-    this.imageOrIconRadius,
+    this.imageOrIconSize = 22,
     this.bgColor,
+    this.textColor,
     this.padding,
+    this.onTap,
+    this.borderRadius = 16,
+    this.border,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-        color: bgColor,
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        margin: const EdgeInsets.symmetric(horizontal: 30),
-        child: Padding(
-          padding:
-              padding ?? const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              imageIcon != null
-                  ? Container(
-                      height: 25,
-                      margin: const EdgeInsets.only(left: 20),
-                      child: Image.asset(
-                        imageIcon!,
-                        color: imageOrIconColor,
-                        height: imageOrIconRadius,
-                        width: imageOrIconRadius,
-                      ))
-                  : Container(),
-              icon != null
-                  ? Container(
-                      alignment: Alignment.centerLeft,
-                      child: Icon(
-                        icon,
-                        size: imageOrIconRadius,
-                        color: imageOrIconColor ?? whiteColor,
-                      ),
-                    )
-                  : Container(),
-              const SizedBox(
-                width: 10,
+    final Color effectiveBgColor = bgColor ?? primaryColor;
+    final Color effectiveTextColor = textColor ??
+        (effectiveBgColor == whiteColor ? blackColor : whiteColor);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(borderRadius!),
+        child: Container(
+          decoration: BoxDecoration(
+            color: effectiveBgColor,
+            borderRadius: BorderRadius.circular(borderRadius!),
+            border: border,
+            boxShadow: [
+              BoxShadow(
+                color: blackColor.withOpacity(0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
-              text != null
-                  ? Container(
-                      alignment: Alignment.center,
-                      child: Text(
-                        text!,
-                        style: TextStyle(
-                          color:
-                              (bgColor == whiteColor) ? blackColor : whiteColor,
-                          fontSize: 15,
-                        ),
-                      ),
-                    )
-                  : Container()
             ],
           ),
-        ));
+          padding: padding ??
+              const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (imageIcon != null) ...[
+                Image.asset(
+                  imageIcon!,
+                  color: imageOrIconColor,
+                  height: imageOrIconSize,
+                  width: imageOrIconSize,
+                ),
+                if (text != null) const SizedBox(width: 12),
+              ],
+              if (icon != null) ...[
+                Icon(
+                  icon,
+                  size: imageOrIconSize,
+                  color: imageOrIconColor ?? effectiveTextColor,
+                ),
+                if (text != null) const SizedBox(width: 12),
+              ],
+              if (text != null)
+                Flexible(
+                  child: Text(
+                    text!,
+                    style: TextStyle(
+                      color: effectiveTextColor,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
