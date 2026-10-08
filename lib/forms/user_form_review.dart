@@ -1,11 +1,5 @@
-import 'package:bechdal_app/constants/colors.dart';
-import 'package:bechdal_app/constants/validators.dart';
-import 'package:bechdal_app/constants/widgets.dart';
-import 'package:bechdal_app/screens/location_screen.dart';
-import 'package:bechdal_app/screens/main_navigatiion_screen.dart';
-import 'package:bechdal_app/services/auth.dart';
-import 'package:bechdal_app/services/user.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -13,8 +7,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import '../components/bottom_nav_widget.dart';
-import '../provider/category_provider.dart';
+import 'package:kalino_app/components/bottom_nav_widget.dart';
+import 'package:kalino_app/constants/colors.dart';
+import 'package:kalino_app/constants/validators.dart';
+import 'package:kalino_app/constants/widgets.dart';
+import 'package:kalino_app/provider/category_provider.dart';
+import 'package:kalino_app/screens/location_screen.dart';
+import 'package:kalino_app/screens/main_navigatiion_screen.dart';
+import 'package:kalino_app/services/auth.dart';
+import 'package:kalino_app/services/user.dart';
 
 class UserFormReview extends StatefulWidget {
   static const screenId = 'user_form_review_screen';
@@ -26,20 +27,41 @@ class UserFormReview extends StatefulWidget {
 }
 
 class _UserFormReviewState extends State<UserFormReview> {
-  UserService firebaseUser = UserService();
-  Auth authService = Auth();
-
+  final UserService _firebaseUser = UserService();
+  final Auth _authService = Auth();
   final _formKey = GlobalKey<FormState>();
+
   late TextEditingController _nameController;
   late TextEditingController _countryCodeController;
   late TextEditingController _phoneNumberController;
   late TextEditingController _emailController;
   late TextEditingController _addressController;
+
   late FocusNode _nameNode;
   late FocusNode _countryCodeNode;
   late FocusNode _phoneNumberNode;
   late FocusNode _emailNode;
   late FocusNode _addressNode;
+
+  bool _isDataLoaded = false;
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController();
+    _countryCodeController = TextEditingController(text: '+93');
+    _phoneNumberController = TextEditingController();
+    _emailController = TextEditingController();
+    _addressController = TextEditingController();
+
+    _nameNode = FocusNode();
+    _countryCodeNode = FocusNode();
+    _phoneNumberNode = FocusNode();
+    _emailNode = FocusNode();
+    _addressNode = FocusNode();
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -47,6 +69,7 @@ class _UserFormReviewState extends State<UserFormReview> {
     _phoneNumberController.dispose();
     _emailController.dispose();
     _addressController.dispose();
+
     _nameNode.dispose();
     _countryCodeNode.dispose();
     _phoneNumberNode.dispose();
@@ -55,184 +78,194 @@ class _UserFormReviewState extends State<UserFormReview> {
     super.dispose();
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _nameController = TextEditingController();
-    _countryCodeController = TextEditingController(text: '+91');
-    _phoneNumberController = TextEditingController();
-    _emailController = TextEditingController();
-    _addressController = TextEditingController();
-    _nameNode = FocusNode();
-    _countryCodeNode = FocusNode();
-    _phoneNumberNode = FocusNode();
-    _emailNode = FocusNode();
-    _addressNode = FocusNode();
-    firebaseUser.getUserData().then((value) {
-      setState(() {
-        print(value);
-        _nameController.text = value['name'] ?? '';
-        _phoneNumberController.text = value['contact_details']['mobile'] ?? '';
-        _emailController.text = value['contact_details']['email'] ?? '';
-        _addressController.text =
-            value['contact_details']['address'] ?? value['address'];
-      });
-      print("valus is ${value['contact_details']['mobile']}");
-    });
-  }
-
-  Future<void> updateUserProductData(
-      categoryProvider, Map<String, dynamic> data, BuildContext context) {
-    return authService.users
-        .doc(firebaseUser.user!.uid)
+  Future<void> _updateUserProductData(
+      CategoryProvider categoryProvider, Map<String, dynamic> data, BuildContext context) {
+    return _authService.users
+        .doc(_firebaseUser.user!.uid)
         .update(data)
         .then((value) {
-      saveProductToDatabase(categoryProvider, context);
+      _saveProductToDatabase(categoryProvider, context);
     }).catchError((error) {
       if (kDebugMode) {
         print(error);
       }
       customSnackBar(
-          context: context,
-          content: 'Failed to update user product to database');
+        context: context,
+        content: 'err_failed_update_user'.tr(),
+      );
     });
   }
 
-  Future<void> saveProductToDatabase(categoryProvider, BuildContext context) {
-    return authService.products.add(categoryProvider.formData).then((value) {
+  Future<void> _saveProductToDatabase(CategoryProvider categoryProvider, BuildContext context) {
+    return _authService.products.add(categoryProvider.formData).then((value) {
       categoryProvider.clearData();
       customSnackBar(
-          context: context, content: 'We have added your product to database');
+        context: context,
+        content: 'msg_product_added_success'.tr(),
+      );
       Navigator.of(context).pushNamedAndRemoveUntil(
-          MainNavigationScreen.screenId, (route) => false);
+        MainNavigationScreen.screenId,
+        (route) => false,
+      );
     }).catchError((error) {
       if (kDebugMode) {
         print(error);
       }
       customSnackBar(
-          context: context,
-          content: 'Failed to update user product to database');
+        context: context,
+        content: 'err_failed_add_product'.tr(),
+      );
     });
   }
 
-  confirmFormDataDialog(CategoryProvider categoryProvider) {
-    return showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return Dialog(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Confirm Details',
-                    style: TextStyle(
-                      color: blackColor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+  void _confirmFormDataDialog(CategoryProvider categoryProvider) {
+    final images = categoryProvider.formData['images'] as List?;
+    final firstImage = (images != null && images.isNotEmpty) ? images[0] : null;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'dialog_confirm_title'.tr(),
+                  style: const TextStyle(
+                    color: blackColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(
-                    height: 10,
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'dialog_confirm_desc'.tr(),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: blackColor,
+                    fontSize: 14,
                   ),
-                  Text(
-                    'Are you sure, you want to continue adding the product?',
-                    style: TextStyle(
-                      color: blackColor,
-                      fontSize: 15,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 10,
-                  ),
-                  ListTile(
-                    leading:
-                        Image.network(categoryProvider.formData['images'][0]),
-                    title: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          categoryProvider.formData['title'],
-                          maxLines: 1,
-                        ),
-                        const SizedBox(
-                          height: 5,
-                        ),
-                        Text(
-                          categoryProvider.formData['description'],
-                          style: TextStyle(
-                            color: disabledColor,
-                            fontSize: 12,
+                ),
+                const SizedBox(height: 16),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: firstImage != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            firstImage,
+                            width: 60,
+                            height: 60,
+                            fit: BoxFit.cover,
                           ),
-                        ),
-                        const SizedBox(
-                          height: 5,
                         )
-                      ],
-                    ),
-                    subtitle: Text(
-                      '\u{20B9} ${categoryProvider.formData['price']}',
-                      style: TextStyle(
-                        color: blackColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                      : Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.image, color: greyColor),
+                        ),
+                  title: Text(
+                    categoryProvider.formData['title'] ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(
-                    height: 20,
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ElevatedButton(
-                        style: ButtonStyle(
-                          backgroundColor: MaterialStateProperty.all(
-                            secondaryColor,
-                          ),
-                        ),
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text(
-                          'Cancel',
+                      const SizedBox(height: 4),
+                      Text(
+                        categoryProvider.formData['description'] ?? '',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: disabledColor,
+                          fontSize: 12,
                         ),
                       ),
-                      const SizedBox(
-                        width: 10,
+                      const SizedBox(height: 6),
+                      Text(
+                        '${categoryProvider.formData['price']} ${'currency_afn'.tr()}',
+                        style: const TextStyle(
+                          color: primaryColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
-                      ElevatedButton(
-                        style: ButtonStyle(
-                          backgroundColor: MaterialStateProperty.all(
-                            secondaryColor,
-                          ),
-                        ),
-                        onPressed: () async {
-                          loadingDialogBox(context, 'uploading to database..');
-                          await updateUserProductData(
-                                  categoryProvider,
-                                  {
-                                    'contact_details': {
-                                      'mobile':
-                                          '+91${_phoneNumberController.text}',
-                                      'email': _emailController.text,
-                                    },
-                                    'name': _nameController.text,
-                                  },
-                                  context)
-                              .whenComplete(() {
-                            print('uploaded');
-                          });
-                        },
-                        child: const Text(
-                          'Confirm',
-                        ),
-                      )
                     ],
-                  )
-                ],
-              ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: greyColor),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(
+                        'btn_cancel'.tr(),
+                        style: const TextStyle(color: blackColor),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: _isSubmitting
+                          ? null
+                          : () async {
+                              Navigator.pop(context);
+                              loadingDialogBox(context, 'msg_uploading_database'.tr());
+                              setState(() {
+                                _isSubmitting = true;
+                              });
+
+                              await _updateUserProductData(
+                                categoryProvider,
+                                {
+                                  'contact_details': {
+                                    'mobile': '+93${_phoneNumberController.text}',
+                                    'email': _emailController.text,
+                                    'address': _addressController.text,
+                                  },
+                                  'name': _nameController.text,
+                                },
+                                context,
+                              );
+
+                              setState(() {
+                                _isSubmitting = false;
+                              });
+                            },
+                      child: Text(
+                        'btn_confirm'.tr(),
+                        style: const TextStyle(color: whiteColor),
+                      ),
+                    ),
+                  ],
+                )
+              ],
             ),
-          );
-        });
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -240,55 +273,76 @@ class _UserFormReviewState extends State<UserFormReview> {
     var categoryProvider = Provider.of<CategoryProvider>(context);
     return Scaffold(
       appBar: AppBar(
-          elevation: 0,
-          iconTheme: IconThemeData(color: blackColor),
-          backgroundColor: whiteColor,
-          title: Text(
-            'Review details',
-            style: TextStyle(color: blackColor),
-          )),
-      body: userFormReviewBody(),
+        elevation: 0,
+        iconTheme: const IconThemeData(color: blackColor),
+        backgroundColor: whiteColor,
+        title: Text(
+          'title_review_details'.tr(),
+          style: const TextStyle(color: blackColor, fontWeight: FontWeight.bold),
+        ),
+      ),
+      body: _userFormReviewBody(),
       bottomNavigationBar: BottomNavigationWidget(
         validator: true,
-        buttonText: 'Confirm',
+        buttonText: 'btn_confirm'.tr(),
         onPressed: () async {
           if (_formKey.currentState!.validate()) {
-            return confirmFormDataDialog(categoryProvider);
+            _confirmFormDataDialog(categoryProvider);
           }
         },
       ),
     );
   }
 
-  userFormReviewBody() {
+  Widget _userFormReviewBody() {
     return Form(
       key: _formKey,
       child: FutureBuilder<DocumentSnapshot>(
-        future: firebaseUser.getUserData(),
-        builder:
-            (BuildContext context, AsyncSnapshot<DocumentSnapshot> snapshot) {
+        future: _firebaseUser.getUserData(),
+        builder: (BuildContext context, AsyncSnapshot<DocumentSnapshot> snapshot) {
           if (snapshot.hasError) {
-            return Text('Error loading Review Form...');
+            return Center(child: Text('err_loading_review_form'.tr()));
           }
           if (snapshot.hasData && !snapshot.data!.exists) {
-            return Text('Document does not ecist');
+            return Center(child: Text('err_document_not_exist'.tr()));
           }
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-                child: CircularProgressIndicator(
-              color: secondaryColor,
-            ));
+          if (snapshot.connectionState == ConnectionState.waiting && !_isDataLoaded) {
+            return const Center(
+              child: CircularProgressIndicator(color: primaryColor),
+            );
           }
-          _nameController.text = snapshot.data!['name'] ?? '';
-          _phoneNumberController.text =
-              snapshot.data!['contact_details']['mobile'] != null
-                  ? snapshot.data!['contact_details']['mobile'].substring(3)
-                  : snapshot.data!['mobile'] != null
-                      ? snapshot.data!['mobile'].substring(3)
-                      : '';
-          print(snapshot.data!.data());
-          _emailController.text = snapshot.data!['email'] ?? '';
-          _addressController.text = snapshot.data!['address'] ?? '';
+
+          if (snapshot.hasData && !_isDataLoaded) {
+            Map<String, dynamic>? data = snapshot.data!.data() as Map<String, dynamic>?;
+            if (data != null) {
+              _nameController.text = data['name'] ?? '';
+
+              String rawMobile = '';
+              if (data['contact_details'] != null && data['contact_details']['mobile'] != null) {
+                rawMobile = data['contact_details']['mobile'].toString();
+              } else if (data['mobile'] != null) {
+                rawMobile = data['mobile'].toString();
+              }
+
+              if (rawMobile.startsWith('+93')) {
+                _phoneNumberController.text = rawMobile.substring(3);
+              } else if (rawMobile.startsWith('0')) {
+                _phoneNumberController.text = rawMobile.substring(1);
+              } else {
+                _phoneNumberController.text = rawMobile;
+              }
+
+              _emailController.text = (data['contact_details'] != null && data['contact_details']['email'] != null)
+                  ? data['contact_details']['email']
+                  : (data['email'] ?? '');
+
+              _addressController.text = (data['contact_details'] != null && data['contact_details']['address'] != null)
+                  ? data['contact_details']['address']
+                  : (data['address'] ?? '');
+            }
+            _isDataLoaded = true;
+          }
+
           return SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(20),
@@ -299,164 +353,142 @@ class _UserFormReviewState extends State<UserFormReview> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      CircleAvatar(
+                      const CircleAvatar(
                         backgroundColor: primaryColor,
-                        radius: 40,
+                        radius: 36,
                         child: CircleAvatar(
                           backgroundColor: secondaryColor,
-                          radius: 37,
+                          radius: 33,
                           child: Icon(
-                            CupertinoIcons.person,
+                            CupertinoIcons.person_fill,
                             color: whiteColor,
-                            size: 40,
+                            size: 36,
                           ),
                         ),
                       ),
-                      const SizedBox(
-                        width: 10,
-                      ),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: TextFormField(
-                            focusNode: _nameNode,
-                            controller: _nameController,
-                            validator: (value) =>
-                                checkNullEmptyValidation(value, "name"),
-                            keyboardType: TextInputType.text,
-                            decoration: InputDecoration(
-                              labelText: 'Name',
-                              labelStyle: TextStyle(
-                                color: greyColor,
-                                fontSize: 14,
-                              ),
-                              errorStyle: const TextStyle(
-                                  color: Colors.red, fontSize: 10),
-                              contentPadding: const EdgeInsets.all(15),
-                              border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(color: blackColor)),
-                            )),
-                      )
-                    ],
-                  ),
-                  const SizedBox(
-                    height: 30,
-                  ),
-                  const Text(
-                    'Contact Details',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 20,
-                  ),
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 1,
-                        child: TextFormField(
-                            focusNode: _countryCodeNode,
-                            enabled: false,
-                            controller: _countryCodeController,
-                            decoration: InputDecoration(
-                              contentPadding: const EdgeInsets.all(15),
-                              disabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(color: disabledColor)),
-                            )),
-                      ),
-                      const SizedBox(
-                        width: 10,
-                      ),
-                      Expanded(
-                        flex: 3,
-                        child: TextFormField(
-                            focusNode: _phoneNumberNode,
-                            controller: _phoneNumberController,
-                            maxLength: 10,
-                            maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                            validator: (value) => validateMobile(value),
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              counterText: '',
-                              labelText: 'Enter your phone number',
-                              labelStyle: TextStyle(
-                                color: greyColor,
-                                fontSize: 14,
-                              ),
-                              errorStyle: const TextStyle(
-                                  color: Colors.red, fontSize: 10),
-                              contentPadding: const EdgeInsets.all(15),
-                              border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(color: blackColor)),
-                            )),
-                      )
-                    ],
-                  ),
-                  const SizedBox(
-                    height: 20,
-                  ),
-                  TextFormField(
-                      focusNode: _emailNode,
-                      controller: _emailController,
-                      validator: (value) => validateEmail(
-                            value,
-                            EmailValidator.validate(
-                              _emailController.text,
+                          focusNode: _nameNode,
+                          controller: _nameController,
+                          validator: (value) => checkNullEmptyValidation(value, "label_name".tr()),
+                          keyboardType: TextInputType.name,
+                          decoration: InputDecoration(
+                            labelText: 'label_name'.tr(),
+                            prefixIcon: const Icon(Icons.person_outline, color: greyColor),
+                            contentPadding: const EdgeInsets.all(15),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                      decoration: InputDecoration(
-                          labelText: 'Enter your email address',
-                          labelStyle: TextStyle(
-                            color: greyColor,
-                            fontSize: 14,
+                        ),
+                      )
+                    ],
+                  ),
+                  const SizedBox(height: 30),
+                  Text(
+                    'header_contact_details'.tr(),
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: blackColor,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 80,
+                        child: TextFormField(
+                          focusNode: _countryCodeNode,
+                          enabled: false,
+                          controller: _countryCodeController,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          decoration: InputDecoration(
+                            contentPadding: const EdgeInsets.all(15),
+                            disabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: disabledColor),
+                            ),
                           ),
-                          errorStyle:
-                              const TextStyle(color: Colors.red, fontSize: 10),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextFormField(
+                          focusNode: _phoneNumberNode,
+                          controller: _phoneNumberController,
+                          maxLength: 9,
+                          maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                          validator: (value) => validateMobile(value),
+                          keyboardType: TextInputType.phone,
+                          decoration: InputDecoration(
+                            counterText: '',
+                            labelText: 'label_phone_number'.tr(),
+                            prefixIcon: const Icon(Icons.phone_outlined, color: greyColor),
+                            contentPadding: const EdgeInsets.all(15),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      )
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    focusNode: _emailNode,
+                    controller: _emailController,
+                    validator: (value) => validateEmail(
+                      value,
+                      EmailValidator.validate(_emailController.text),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: InputDecoration(
+                      labelText: 'label_email'.tr(),
+                      prefixIcon: const Icon(Icons.email_outlined, color: greyColor),
+                      contentPadding: const EdgeInsets.all(15),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  InkWell(
+                    onTap: () async {
+                      final result = await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (builder) => const LocationScreen(
+                            onlyPop: true,
+                            popToScreen: UserFormReview.screenId,
+                          ),
+                        ),
+                      );
+                      if (result != null && result is String && result.isNotEmpty) {
+                        setState(() {
+                          _addressController.text = result;
+                        });
+                      }
+                    },
+                    child: IgnorePointer(
+                      child: TextFormField(
+                        focusNode: _addressNode,
+                        controller: _addressController,
+                        validator: (value) => checkNullEmptyValidation(value, 'label_address'.tr()),
+                        minLines: 2,
+                        maxLines: 4,
+                        decoration: InputDecoration(
+                          labelText: 'label_address'.tr(),
+                          prefixIcon: const Icon(Icons.location_on_outlined, color: greyColor),
+                          suffixIcon: const Icon(Icons.arrow_forward_ios, size: 18, color: greyColor),
                           contentPadding: const EdgeInsets.all(15),
                           border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: blackColor)))),
-                  const SizedBox(
-                    height: 20,
-                  ),
-                  InkWell(
-                    onTap: () {
-                      Navigator.of(context).push(MaterialPageRoute(
-                          builder: (builder) => LocationScreen(
-                                onlyPop: true,
-                                popToScreen: UserFormReview.screenId,
-                              )));
-                    },
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                              focusNode: _addressNode,
-                              enabled: false,
-                              controller: _addressController,
-                              validator: (value) {
-                                return checkNullEmptyValidation(
-                                    value, 'your address');
-                              },
-                              minLines: 2,
-                              maxLines: 4,
-                              keyboardType: TextInputType.text,
-                              decoration: InputDecoration(
-                                labelText: 'Address',
-                                labelStyle: TextStyle(
-                                  color: greyColor,
-                                  fontSize: 14,
-                                ),
-                                errorStyle: const TextStyle(
-                                    color: Colors.red, fontSize: 10),
-                                contentPadding: const EdgeInsets.all(15),
-                              )),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                        Icon(Icons.arrow_forward_ios)
-                      ],
+                      ),
                     ),
                   ),
                 ],
