@@ -1,152 +1,183 @@
-// ignore_for_file: use_build_context_synchronously
-
-import 'package:bechdal_app/constants/widgets.dart';
-import 'package:bechdal_app/screens/auth/email_verify_screen.dart';
-import 'package:bechdal_app/screens/auth/phone_otp_screen.dart';
-import 'package:bechdal_app/screens/location_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import 'package:kalino_app/constants/widgets.dart';
+import 'package:kalino_app/screens/auth/email_verify_screen.dart';
+import 'package:kalino_app/screens/auth/phone_otp_screen.dart';
+import 'package:kalino_app/screens/location_screen.dart';
+
 class Auth {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final storage = const FlutterSecureStorage();
-  User? currentUser = FirebaseAuth.instance.currentUser;
-  CollectionReference users = FirebaseFirestore.instance.collection('users');
-  CollectionReference categories =
+
+  User? get currentUser => _firebaseAuth.currentUser;
+
+  CollectionReference get users =>
+      FirebaseFirestore.instance.collection('users');
+  CollectionReference get categories =>
       FirebaseFirestore.instance.collection('categories');
-  CollectionReference products =
+  CollectionReference get products =>
       FirebaseFirestore.instance.collection('products');
-  CollectionReference messages =
+  CollectionReference get messages =>
       FirebaseFirestore.instance.collection('messages');
 
-  Future<void> getAdminCredentialPhoneNumber(BuildContext context, user) async {
-    final QuerySnapshot userDataQuery =
-        await users.where('uid', isEqualTo: user!.uid).get();
-    List<DocumentSnapshot> wasUserPresentInDatabase = userDataQuery.docs;
-    if (wasUserPresentInDatabase.isNotEmpty) {
-      Navigator.pushReplacementNamed(context, LocationScreen.screenId);
+  /// بررسی وجود کاربر در دیتابیس و هدایت به صفحه موقعیت
+  Future<void> getAdminCredentialPhoneNumber(
+      BuildContext context, User? user) async {
+    if (user == null) return;
+
+    final DocumentSnapshot userDoc = await users.doc(user.uid).get();
+
+    if (userDoc.exists) {
+      if (context.mounted) {
+        Navigator.pushReplacementNamed(context, LocationScreen.screenId);
+      }
     } else {
-      await registerWithPhoneNumber(user, context);
+      if (context.mounted) {
+        await registerWithPhoneNumber(user, context);
+      }
     }
   }
 
-  Future<void> registerWithPhoneNumber(user, context) async {
-    final uid = user!.uid;
-    final mobileNo = user!.phoneNumber;
-    final email = user!.email;
-    Navigator.pushReplacementNamed(context, LocationScreen.screenId);
-    return users.doc(uid).set({
-      'uid': uid,
-      'mobile': mobileNo,
-      'email': email,
-      'name': '',
-      'address': ''
-    }).then((value) {
-      if (kDebugMode) {
-        print('user added successfully');
+  /// ثبت اطلاعات کاربر تلفنی در Firestore
+  Future<void> registerWithPhoneNumber(User user, BuildContext context) async {
+    final uid = user.uid;
+    final mobileNo = user.phoneNumber ?? '';
+    final email = user.email ?? '';
+
+    try {
+      await users.doc(uid).set({
+        'uid': uid,
+        'mobile': mobileNo,
+        'email': email,
+        'name': user.displayName ?? '',
+        'address': '',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      if (context.mounted) {
+        Navigator.pushReplacementNamed(context, LocationScreen.screenId);
       }
-      // ignore: invalid_return_type_for_catch_error, avoid_print
-    }).catchError((error) => print("Failed to add user: $error"));
+    } catch (error) {
+      if (kDebugMode) {
+        print("Failed to add user: $error");
+      }
+    }
   }
 
-  Future<void> verifyPhoneNumber(BuildContext context, number) async {
-    loadingDialogBox(context, 'Please wait');
+  /// ارسال کد تایید پیامکی (OTP)
+  Future<void> verifyPhoneNumber(BuildContext context, String number) async {
+    loadingDialogBox(context, 'msg_please_wait'.tr());
 
-    // ignore: prefer_function_declarations_over_variables
     final PhoneVerificationCompleted verificationCompleted =
-        (phoneAuthCredential) async {
-      await _firebaseAuth.signInWithCredential(phoneAuthCredential);
+        (PhoneAuthCredential phoneAuthCredential) async {
+      try {
+        await _firebaseAuth.signInWithCredential(phoneAuthCredential);
+      } catch (e) {
+        if (kDebugMode) print(e);
+      }
     };
 
-    // ignore: prefer_function_declarations_over_variables
     final PhoneVerificationFailed verificationFailed =
         (FirebaseAuthException e) {
-      if (e.code == 'invalid-phone-number') {
-        Navigator.pop(context);
-        wrongDetailsAlertBox(
-            'The phone number that you entered is invalid. Please enter a valid phone number.',
-            context);
-      } else {
-        Navigator.pop(context);
-        wrongDetailsAlertBox(e.code, context);
+      if (context.mounted) Navigator.pop(context);
+
+      String errorMsg = 'msg_invalid_phone'.tr();
+      if (e.code != 'invalid-phone-number') {
+        errorMsg = e.message ?? e.code;
+      }
+
+      if (context.mounted) {
+        wrongDetailsAlertBox(errorMsg, context);
       }
     };
+
     final PhoneCodeSent phoneCodeSent =
-        ((verificationId, forceResendingToken) async {
-      Navigator.pop(context);
-      Navigator.push(
+        (String verificationId, int? forceResendingToken) async {
+      if (context.mounted) {
+        Navigator.pop(context);
+        Navigator.push(
           context,
           MaterialPageRoute(
-              builder: (builder) => PhoneOTPScreen(
-                    phoneNumber: number,
-                    verificationIdFinal: verificationId,
-                  )));
-    });
-    try {
-      _firebaseAuth.verifyPhoneNumber(
-          phoneNumber: number,
-          verificationCompleted: verificationCompleted,
-          verificationFailed: verificationFailed,
-          timeout: const Duration(seconds: 60),
-          codeSent: phoneCodeSent,
-          codeAutoRetrievalTimeout: (String verificationId) {
-            print(verificationId);
-          });
-    } catch (e) {
-      if (kDebugMode) {
-        print(e.toString());
+            builder: (builder) => PhoneOTPScreen(
+              phoneNumber: number,
+              verificationIdFinal: verificationId,
+            ),
+          ),
+        );
       }
+    };
+
+    try {
+      await _firebaseAuth.verifyPhoneNumber(
+        phoneNumber: number,
+        verificationCompleted: verificationCompleted,
+        verificationFailed: verificationFailed,
+        timeout: const Duration(seconds: 60),
+        codeSent: phoneCodeSent,
+        codeAutoRetrievalTimeout: (String verificationId) {
+          if (kDebugMode) print('Auto retrieval timeout: $verificationId');
+        },
+      );
+    } catch (e) {
+      if (context.mounted) Navigator.pop(context);
+      if (kDebugMode) print(e.toString());
     }
   }
 
+  /// تایید کد SMS و ورود
   Future<void> signInwithPhoneNumber(
       String verificationId, String smsCode, BuildContext context) async {
     try {
-      loadingDialogBox(context, 'Please Wait');
+      loadingDialogBox(context, 'msg_please_wait'.tr());
       AuthCredential credential = PhoneAuthProvider.credential(
-          verificationId: verificationId, smsCode: smsCode);
+        verificationId: verificationId,
+        smsCode: smsCode,
+      );
 
       UserCredential userCredential =
           await _firebaseAuth.signInWithCredential(credential);
 
-      Navigator.pop(context);
-      if (userCredential != null) {
-        getAdminCredentialPhoneNumber(context, userCredential.user);
+      if (context.mounted) Navigator.pop(context);
+
+      if (userCredential.user != null) {
+        if (context.mounted) {
+          await getAdminCredentialPhoneNumber(context, userCredential.user);
+        }
       } else {
-        wrongDetailsAlertBox('Login Failed, Please retry again.', context);
+        if (context.mounted) {
+          wrongDetailsAlertBox('msg_login_failed'.tr(), context);
+        }
       }
     } catch (e) {
-      Navigator.pop(context);
-      wrongDetailsAlertBox(
-          'The details you entered is not matching with our database. Please validate details again, before proceeding. ',
-          context);
+      if (context.mounted) {
+        Navigator.pop(context);
+        wrongDetailsAlertBox('msg_otp_mismatch'.tr(), context);
+      }
     }
   }
 
+  /// ورود با Google
   static Future<User?> signInWithGoogle({required BuildContext context}) async {
     FirebaseAuth auth = FirebaseAuth.instance;
     User? user;
 
     if (kIsWeb) {
       GoogleAuthProvider authProvider = GoogleAuthProvider();
-
       try {
         final UserCredential userCredential =
             await auth.signInWithPopup(authProvider);
-
         user = userCredential.user;
       } catch (e) {
-        if (kDebugMode) {
-          print(e);
-        }
+        if (kDebugMode) print(e);
       }
     } else {
       final GoogleSignIn googleSignIn = GoogleSignIn();
-
       final GoogleSignInAccount? googleSignInAccount =
           await googleSignIn.signIn();
 
@@ -162,25 +193,49 @@ class Auth {
         try {
           final UserCredential userCredential =
               await auth.signInWithCredential(credential);
-
           user = userCredential.user;
+
+          if (user != null) {
+            final userDoc = await FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .get();
+
+            if (!userDoc.exists) {
+              await FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(user.uid)
+                  .set({
+                'uid': user.uid,
+                'name': user.displayName ?? '',
+                'email': user.email ?? '',
+                'mobile': user.phoneNumber ?? '',
+                'address': '',
+                'createdAt': FieldValue.serverTimestamp(),
+              });
+            }
+          }
         } on FirebaseAuthException catch (e) {
-          if (e.code == 'account-exists-with-different-credential') {
-            customSnackBar(
-              context: context,
-              content: 'The account already exists with a different credential',
-            );
-          } else if (e.code == 'invalid-credential') {
-            customSnackBar(
-              context: context,
-              content: 'Error occurred while accessing credentials. Try again.',
-            );
+          if (context.mounted) {
+            if (e.code == 'account-exists-with-different-credential') {
+              customSnackBar(
+                context: context,
+                content: 'msg_account_exists_different_cred'.tr(),
+              );
+            } else if (e.code == 'invalid-credential') {
+              customSnackBar(
+                context: context,
+                content: 'msg_invalid_credentials'.tr(),
+              );
+            }
           }
         } catch (e) {
-          customSnackBar(
-            context: context,
-            content: 'Error occurred using Google Sign In. Try again.',
-          );
+          if (context.mounted) {
+            customSnackBar(
+              context: context,
+              content: 'msg_google_sign_in_error'.tr(),
+            );
+          }
         }
       }
     }
@@ -188,112 +243,147 @@ class Auth {
     return user;
   }
 
-  Future<DocumentSnapshot> getAdminCredentialEmailAndPassword(
-      {required BuildContext context,
-      required String email,
-      String? firstName,
-      String? lastName,
-      required String password,
-      required bool isLoginUser}) async {
-    DocumentSnapshot result = await users.doc(email).get();
-    if (kDebugMode) {
-      print(result);
-    }
+  /// مدیریت ورود و ثبت‌نام با ایمیل
+  Future<void> getAdminCredentialEmailAndPassword({
+    required BuildContext context,
+    required String email,
+    String? firstName,
+    String? lastName,
+    required String password,
+    required bool isLoginUser,
+  }) async {
     try {
       if (isLoginUser) {
-        print('loggin user');
-        signInWithEmail(context, email, password);
+        await signInWithEmail(context, email, password);
       } else {
-        if (result.exists) {
-          customSnackBar(
+        final QuerySnapshot query =
+            await users.where('email', isEqualTo: email).get();
+
+        if (query.docs.isNotEmpty) {
+          if (context.mounted) {
+            customSnackBar(
               context: context,
-              content: 'An account already exists with this email');
+              content: 'msg_email_already_registered'.tr(),
+            );
+          }
         } else {
-          registerWithEmail(context, email, password, firstName!, lastName!);
+          if (context.mounted) {
+            await registerWithEmail(
+              context,
+              email,
+              password,
+              firstName ?? '',
+              lastName ?? '',
+            );
+          }
         }
       }
     } catch (e) {
-      customSnackBar(context: context, content: e.toString());
-    }
-    return result;
-  }
-
-  signInWithEmail(BuildContext context, String email, String password) async {
-    try {
-      loadingDialogBox(context, 'Validating details');
-      final credential = await FirebaseAuth.instance
-          .signInWithEmailAndPassword(email: email, password: password);
-      if (kDebugMode) {
-        print(credential);
-      }
-      Navigator.pop(context);
-      if (credential.user!.uid != null) {
-        Navigator.pushReplacementNamed(context, LocationScreen.screenId);
-      } else {
-        customSnackBar(
-            context: context, content: 'Please check with your credentials');
-      }
-    } on FirebaseAuthException catch (e) {
-      Navigator.pop(context);
-      if (e.code == 'user-not-found') {
-        customSnackBar(
-            context: context, content: 'No user found for that email.');
-      } else if (e.code == 'wrong-password') {
-        customSnackBar(
-            context: context,
-            content: 'Wrong password provided for that user.');
+      if (context.mounted) {
+        customSnackBar(context: context, content: e.toString());
       }
     }
   }
 
-  void registerWithEmail(BuildContext context, String email, String password,
-      String firstName, String lastName) async {
+  /// ورود با ایمیل و رمز
+  Future<void> signInWithEmail(
+      BuildContext context, String email, String password) async {
     try {
-      loadingDialogBox(context, 'Validating details');
-
-      final credential =
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      loadingDialogBox(context, 'msg_validating_details'.tr());
+      final credential = await _firebaseAuth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      return users.doc(credential.user!.uid).set({
-        'uid': credential.user!.uid,
-        'name': "$firstName $lastName",
+      if (context.mounted) Navigator.pop(context);
+
+      if (credential.user != null) {
+        if (context.mounted) {
+          Navigator.pushReplacementNamed(context, LocationScreen.screenId);
+        }
+      } else {
+        if (context.mounted) {
+          customSnackBar(
+            context: context,
+            content: 'msg_check_credentials'.tr(),
+          );
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      if (context.mounted) Navigator.pop(context);
+
+      String message = 'msg_auth_failed'.tr();
+      if (e.code == 'user-not-found') {
+        message = 'msg_user_not_found'.tr();
+      } else if (e.code == 'wrong-password') {
+        message = 'msg_wrong_password'.tr();
+      }
+
+      if (context.mounted) {
+        customSnackBar(context: context, content: message);
+      }
+    }
+  }
+
+  /// ثبت‌نام با ایمیل و رمز
+  Future<void> registerWithEmail(
+    BuildContext context,
+    String email,
+    String password,
+    String firstName,
+    String lastName,
+  ) async {
+    try {
+      loadingDialogBox(context, 'msg_validating_details'.tr());
+
+      final credential = await _firebaseAuth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      final User? user = credential.user;
+      if (user == null) return;
+
+      await users.doc(user.uid).set({
+        'uid': user.uid,
+        'name': "$firstName $lastName".trim(),
         'email': email,
         'mobile': '',
-        'address': ''
-      }).then((value) async {
-        await credential.user!.sendEmailVerification().then((value) {
-          Navigator.pushReplacementNamed(context, EmailVerifyScreen.screenId);
-        });
-
-        customSnackBar(context: context, content: 'Registered successfully');
-      }).catchError((onError) {
-        if (kDebugMode) {
-          print(onError);
-        }
-        customSnackBar(
-            context: context,
-            content:
-                'Failed to add user to database, please try again $onError');
+        'address': '',
+        'createdAt': FieldValue.serverTimestamp(),
       });
+
+      await user.sendEmailVerification();
+
+      if (context.mounted) {
+        Navigator.pop(context);
+        Navigator.pushReplacementNamed(context, EmailVerifyScreen.screenId);
+        customSnackBar(
+          context: context,
+          content: 'msg_register_success'.tr(),
+        );
+      }
     } on FirebaseAuthException catch (e) {
-      Navigator.pop(context);
+      if (context.mounted) Navigator.pop(context);
+
+      String message = 'msg_auth_failed'.tr();
       if (e.code == 'weak-password') {
-        customSnackBar(
-            context: context, content: 'The password provided is too weak.');
+        message = 'msg_weak_password'.tr();
       } else if (e.code == 'email-already-in-use') {
-        customSnackBar(
-            context: context,
-            content: 'The account already exists for that email.');
+        message = 'msg_email_already_in_use'.tr();
+      }
+
+      if (context.mounted) {
+        customSnackBar(context: context, content: message);
       }
     } catch (e) {
-      if (kDebugMode) {
-        print(e);
+      if (context.mounted) {
+        Navigator.pop(context);
+        customSnackBar(
+          context: context,
+          content: '${'msg_error_occurred'.tr()}: ${e.toString()}',
+        );
       }
-      customSnackBar(
-          context: context, content: 'Error occured: ${e.toString()}');
     }
   }
 }
