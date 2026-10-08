@@ -1,52 +1,54 @@
-import 'package:bechdal_app/components/custom_icon_button.dart';
-import 'package:bechdal_app/components/signup_buttons.dart';
-import 'package:bechdal_app/constants/colors.dart';
-import 'package:bechdal_app/constants/validators.dart';
-import 'package:bechdal_app/constants/widgets.dart';
-import 'package:bechdal_app/screens/auth/phone_auth_screen.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:email_validator/email_validator.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../services/auth.dart';
+import 'package:kalino_app/components/signup_buttons.dart';
+import 'package:kalino_app/constants/colors.dart';
+import 'package:kalino_app/constants/validators.dart';
+import 'package:kalino_app/constants/widgets.dart';
+import 'package:kalino_app/services/auth.dart';
 
 class RegisterForm extends StatefulWidget {
-  const RegisterForm({
-    Key? key,
-  }) : super(key: key);
+  const RegisterForm({Key? key}) : super(key: key);
 
   @override
   State<RegisterForm> createState() => _RegisterFormState();
 }
 
 class _RegisterFormState extends State<RegisterForm> {
-  bool obsecure = true;
-  Auth authService = Auth();
+  final Auth _authService = Auth();
+  final _formKey = GlobalKey<FormState>();
+
   late final TextEditingController _firstNameController;
   late final TextEditingController _lastNameController;
   late final TextEditingController _emailController;
   late final TextEditingController _passwordController;
   late final TextEditingController _confirmPasswordController;
+
   late final FocusNode _firstNameNode;
   late final FocusNode _lastNameNode;
   late final FocusNode _emailNode;
   late final FocusNode _passwordNode;
   late final FocusNode _confirmPasswordNode;
-  final _formKey = GlobalKey<FormState>();
+
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+  bool _isLoading = false;
+
   @override
   void initState() {
+    super.initState();
     _firstNameController = TextEditingController();
     _lastNameController = TextEditingController();
     _emailController = TextEditingController();
     _passwordController = TextEditingController();
     _confirmPasswordController = TextEditingController();
+
     _firstNameNode = FocusNode();
     _lastNameNode = FocusNode();
     _emailNode = FocusNode();
     _passwordNode = FocusNode();
     _confirmPasswordNode = FocusNode();
-
-    super.initState();
   }
 
   @override
@@ -56,6 +58,7 @@ class _RegisterFormState extends State<RegisterForm> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+
     _firstNameNode.dispose();
     _lastNameNode.dispose();
     _emailNode.dispose();
@@ -66,214 +69,243 @@ class _RegisterFormState extends State<RegisterForm> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: MediaQuery.of(context).size.height - 250,
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(bottom: 24),
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 20,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Form(
               key: _formKey,
               child: Column(
                 children: [
+                  // فیلدهای نام و نام خانوادگی
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Expanded(
                         child: TextFormField(
                           focusNode: _firstNameNode,
+                          controller: _firstNameController,
                           validator: (value) {
                             return checkNullEmptyValidation(
-                                value, 'first name');
+                              value,
+                              'label_first_name'.tr(),
+                            );
                           },
-                          controller: _firstNameController,
                           keyboardType: TextInputType.name,
                           decoration: InputDecoration(
-                              labelText: 'First Name',
-                              labelStyle: TextStyle(
-                                color: greyColor,
-                                fontSize: 14,
-                              ),
-                              hintText: 'Enter your First Name',
-                              hintStyle: TextStyle(
-                                color: greyColor,
-                                fontSize: 14,
-                              ),
-                              contentPadding: const EdgeInsets.all(15),
-                              border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8))),
+                            prefixIcon: const Icon(Icons.person_outline, color: greyColor),
+                            labelText: 'label_first_name'.tr(),
+                            hintText: 'hint_first_name'.tr(),
+                            hintStyle: const TextStyle(
+                              color: greyColor,
+                              fontSize: 12,
+                            ),
+                            contentPadding: const EdgeInsets.all(15),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                         ),
                       ),
-                      const SizedBox(
-                        width: 10,
-                      ),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: TextFormField(
                           focusNode: _lastNameNode,
-                          validator: (value) {
-                            return checkNullEmptyValidation(value, 'last name');
-                          },
                           controller: _lastNameController,
+                          validator: (value) {
+                            return checkNullEmptyValidation(
+                              value,
+                              'label_last_name'.tr(),
+                            );
+                          },
                           keyboardType: TextInputType.name,
                           decoration: InputDecoration(
-                              labelText: 'Last Name',
-                              labelStyle: TextStyle(
-                                color: greyColor,
-                                fontSize: 14,
-                              ),
-                              hintText: 'Enter your Last Name',
-                              hintStyle: TextStyle(
-                                color: greyColor,
-                                fontSize: 14,
-                              ),
-                              contentPadding: const EdgeInsets.all(15),
-                              border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8))),
+                            prefixIcon: const Icon(Icons.person_outline, color: greyColor),
+                            labelText: 'label_last_name'.tr(),
+                            hintText: 'hint_last_name'.tr(),
+                            hintStyle: const TextStyle(
+                              color: greyColor,
+                              fontSize: 12,
+                            ),
+                            contentPadding: const EdgeInsets.all(15),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(
-                    height: 15,
-                  ),
+                  const SizedBox(height: 15),
+
+                  // فیلد ایمیل
                   TextFormField(
                     focusNode: _emailNode,
                     controller: _emailController,
                     validator: (value) {
-                      return validateEmail(value,
-                          EmailValidator.validate(_emailController.text));
+                      return validateEmail(
+                        value,
+                        EmailValidator.validate(_emailController.text),
+                      );
                     },
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
-                        labelText: 'Email',
-                        labelStyle: TextStyle(
-                          color: greyColor,
-                          fontSize: 14,
-                        ),
-                        hintText: 'Enter your Email',
-                        hintStyle: TextStyle(
-                          color: greyColor,
-                          fontSize: 14,
-                        ),
-                        contentPadding: const EdgeInsets.all(15),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8))),
+                      prefixIcon: const Icon(Icons.email_outlined, color: greyColor),
+                      labelText: 'label_email'.tr(),
+                      hintText: 'hint_enter_email'.tr(),
+                      hintStyle: const TextStyle(
+                        color: greyColor,
+                        fontSize: 12,
+                      ),
+                      contentPadding: const EdgeInsets.all(15),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                   ),
-                  const SizedBox(
-                    height: 15,
-                  ),
+                  const SizedBox(height: 15),
+
+                  // فیلد رمز عبور
                   TextFormField(
                     focusNode: _passwordNode,
-                    obscureText: obsecure,
+                    obscureText: _obscurePassword,
                     controller: _passwordController,
                     validator: (value) {
                       return validatePassword(value, _passwordController.text);
                     },
                     decoration: InputDecoration(
-                        suffixIcon: IconButton(
-                            icon: Icon(
-                              Icons.remove_red_eye_outlined,
-                              color: obsecure ? greyColor : blackColor,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                obsecure = !obsecure;
-                              });
-                            }),
-                        labelText: 'Password',
-                        labelStyle: TextStyle(
-                          color: greyColor,
-                          fontSize: 14,
+                      prefixIcon: const Icon(Icons.lock_outline, color: greyColor),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: _obscurePassword ? greyColor : primaryColor,
                         ),
-                        hintText: 'Enter Your Password',
-                        hintStyle: TextStyle(
-                          color: greyColor,
-                          fontSize: 14,
-                        ),
-                        contentPadding: const EdgeInsets.all(15),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8))),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
+                      labelText: 'label_password'.tr(),
+                      hintText: 'hint_enter_password'.tr(),
+                      hintStyle: const TextStyle(
+                        color: greyColor,
+                        fontSize: 12,
+                      ),
+                      contentPadding: const EdgeInsets.all(15),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                   ),
-                  const SizedBox(
-                    height: 15,
-                  ),
+                  const SizedBox(height: 15),
+
+                  // فیلد تکرار رمز عبور
                   TextFormField(
                     focusNode: _confirmPasswordNode,
-                    obscureText: true,
+                    obscureText: _obscureConfirmPassword,
                     controller: _confirmPasswordController,
                     validator: (value) {
                       return validateSamePassword(
-                          value, _passwordController.text);
+                        value,
+                        _passwordController.text,
+                      );
                     },
                     decoration: InputDecoration(
-                        labelText: 'Confirm Password',
-                        labelStyle: TextStyle(
-                          color: greyColor,
-                          fontSize: 14,
+                      prefixIcon: const Icon(Icons.lock_reset_outlined, color: greyColor),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureConfirmPassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: _obscureConfirmPassword ? greyColor : primaryColor,
                         ),
-                        hintText: 'Enter Your Confirm Password',
-                        hintStyle: TextStyle(
-                          color: greyColor,
-                          fontSize: 14,
+                        onPressed: () {
+                          setState(() {
+                            _obscureConfirmPassword = !_obscureConfirmPassword;
+                          });
+                        },
+                      ),
+                      labelText: 'label_confirm_password'.tr(),
+                      hintText: 'hint_confirm_password'.tr(),
+                      hintStyle: const TextStyle(
+                        color: greyColor,
+                        fontSize: 12,
+                      ),
+                      contentPadding: const EdgeInsets.all(15),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // دکمه ثبت‌نام
+                  _isLoading
+                      ? const CircularProgressIndicator(color: primaryColor)
+                      : roundedButton(
+                          context: context,
+                          bgColor: primaryColor,
+                          text: 'btn_sign_up'.tr(),
+                          textColor: whiteColor,
+                          onPressed: () async {
+                            if (_formKey.currentState!.validate()) {
+                              setState(() {
+                                _isLoading = true;
+                              });
+
+                              await _authService.getAdminCredentialEmailAndPassword(
+                                context: context,
+                                firstName: _firstNameController.text,
+                                lastName: _lastNameController.text,
+                                email: _emailController.text,
+                                password: _passwordController.text,
+                                isLoginUser: false,
+                              );
+
+                              if (mounted) {
+                                setState(() {
+                                  _isLoading = false;
+                                });
+                              }
+                            }
+                          },
                         ),
-                        contentPadding: const EdgeInsets.all(15),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8))),
-                  ),
-                  const SizedBox(
-                    height: 30,
-                  ),
-                  roundedButton(
-                      context: context,
-                      bgColor: secondaryColor,
-                      text: 'Sign Up',
-                      textColor: whiteColor,
-                      onPressed: () async {
-                        if (_formKey.currentState!.validate()) {
-                          await authService.getAdminCredentialEmailAndPassword(
-                              context: context,
-                              firstName: _firstNameController.text,
-                              lastName: _lastNameController.text,
-                              email: _emailController.text,
-                              password: _passwordController.text,
-                              isLoginUser: false);
-                        }
-                      }),
                 ],
               ),
             ),
           ),
-          const SizedBox(
-            height: 10,
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            alignment: Alignment.center,
+          const SizedBox(height: 16),
+
+          // متن قوانین و حریم خصوصی
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Text(
-              'By Signing up you agree to our Terms and Conditions, and Privacy Policy',
+              'text_terms_privacy_agreement'.tr(),
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
+              style: const TextStyle(
+                fontSize: 12,
                 color: greyColor,
+                height: 1.4,
               ),
             ),
           ),
-          const SizedBox(
-            height: 15,
-          ),
+          const SizedBox(height: 16),
+
+          // جداکننده
           Text(
-            'Or',
-            style: TextStyle(
-              fontSize: 18,
+            'text_or'.tr(),
+            style: const TextStyle(
+              fontSize: 16,
               color: greyColor,
             ),
           ),
-          const SizedBox(
-            height: 15,
-          ),
+          const SizedBox(height: 16),
+
+          // دکمه‌های ثبت‌نام با گوگل / شماره تلفن
           const SignUpButtons(),
         ],
       ),
