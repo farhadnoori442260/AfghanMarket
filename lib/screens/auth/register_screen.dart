@@ -1,10 +1,12 @@
-import 'package:bechdal_app/components/large_heading_widget.dart';
-import 'package:bechdal_app/constants/colors.dart';
-import 'package:bechdal_app/forms/register_form.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+import 'package:kalino_app/components/large_heading_widget.dart';
+import 'package:kalino_app/constants/colors.dart';
+import 'package:kalino_app/forms/register_form.dart';
+
 class RegisterScreen extends StatefulWidget {
-  static const screenId = 'register_screen';
+  static const String screenId = 'register_screen';
   const RegisterScreen({Key? key}) : super(key: key);
 
   @override
@@ -16,26 +18,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: whiteColor,
-      body: _body(),
+      body: SafeArea(
+        child: _buildBody(),
+      ),
     );
   }
-}
 
-_body() {
-  return SingleChildScrollView(
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Padding(
-        padding: const EdgeInsets.only(right: 10),
-        child: LargeHeadingWidget(
-          heading: 'Create Account',
-          subHeading: 'Enter your Name, Email and Password for sign up.',
-          anotherTaglineText: '\nAlready have an account ?',
-          anotherTaglineColor: secondaryColor,
-          subheadingTextSize: 16,
-          taglineNavigation: true,
-        ),
+  Widget _buildBody() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          LargeHeadingWidget(
+            heading: 'title_create_account'.tr(),
+            subHeading: 'desc_create_account'.tr(),
+            anotherTaglineText: '\n${'already_have_account'.tr()}',
+            anotherTaglineColor: secondaryColor,
+            subheadingTextSize: 15,
+            taglineNavigation: true,
+          ),
+          const SizedBox(height: 20),
+          const RegisterForm(),
+        ],
       ),
-      const RegisterForm(),
-    ]),
-  );
+    );
+  }
 }
