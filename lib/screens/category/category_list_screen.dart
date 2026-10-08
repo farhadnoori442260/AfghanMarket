@@ -1,104 +1,160 @@
-import 'package:bechdal_app/forms/sell_car_form.dart';
-import 'package:bechdal_app/provider/category_provider.dart';
-import 'package:bechdal_app/screens/category/product_by_category_screen.dart';
-import 'package:bechdal_app/screens/category/subcategory_screen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../constants/colors.dart';
-import '../../services/auth.dart';
+import 'package:kalino_app/constants/colors.dart';
+import 'package:kalino_app/forms/sell_car_form.dart';
+import 'package:kalino_app/provider/category_provider.dart';
+import 'package:kalino_app/screens/category/product_by_category_screen.dart';
+import 'package:kalino_app/screens/category/subcategory_screen.dart';
+import 'package:kalino_app/services/auth.dart';
 
 class CategoryListScreen extends StatelessWidget {
-  final bool? isForForm;
   static const String screenId = 'category_list_screen';
+  final bool? isForForm;
+
   const CategoryListScreen({Key? key, this.isForForm}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    var categoryProvider = Provider.of<CategoryProvider>(context);
+    final categoryProvider = Provider.of<CategoryProvider>(context);
+
     return Scaffold(
+      backgroundColor: whiteColor,
       appBar: AppBar(
         backgroundColor: whiteColor,
-        elevation: 0,
-        iconTheme: IconThemeData(color: blackColor),
+        elevation: 1,
+        iconTheme: const IconThemeData(color: blackColor),
         title: Text(
-          isForForm == true ? 'Select Category' : 'Categories',
-          style: TextStyle(color: blackColor),
+          isForForm == true ? 'title_select_category'.tr() : 'title_categories'.tr(),
+          style: const TextStyle(
+            color: blackColor,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
         ),
       ),
-      body: _body(categoryProvider),
+      body: _buildBody(context, categoryProvider),
     );
   }
 
-  _body(categoryProvider) {
-    Auth authService = Auth();
+  Widget _buildBody(BuildContext context, CategoryProvider categoryProvider) {
+    final Auth authService = Auth();
 
     return FutureBuilder<QuerySnapshot>(
-        future: authService.categories.get(),
-        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-          if (snapshot.hasError) {
-            return Container();
-          }
+      future: authService.categories.get(),
+      builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+        if (snapshot.hasError) {
+          return Center(
+            child: Text('msg_error_loading'.tr()),
+          );
+        }
 
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: CircularProgressIndicator(
-                color: secondaryColor,
-              ),
-            );
-          }
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(
+              color: secondaryColor,
+            ),
+          );
+        }
 
-          return ListView.builder(
-              itemCount: snapshot.data?.docs.length,
-              itemBuilder: ((context, index) {
-                var doc = snapshot.data?.docs[index];
-                return Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: ListTile(
-                      onTap: () {
-                        categoryProvider.setCategory(doc!['category_name']);
-                        categoryProvider.setCategorySnapshot(doc);
-                        if (isForForm == true) {
-                          if (doc['subcategory'] == null) {
-                            Navigator.of(context)
-                                .pushNamed(SellCarForm.screenId);
-                          } else {
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (builder) => SubCategoryScreen(
-                                        doc: doc, isForForm: true)));
-                          }
-                        } else {
-                          if (doc['subcategory'] == null) {
-                            Navigator.of(context)
-                                .pushNamed(ProductByCategory.screenId);
-                          } else {
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (builder) => SubCategoryScreen(
-                                          doc: doc,
-                                        )));
-                          }
-                        }
-                      },
-                      leading: Image.network(doc!['img']),
-                      title: Text(
-                        doc['category_name'],
-                        style: const TextStyle(
-                          fontSize: 15,
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(
+            child: Text('msg_no_categories'.tr()),
+          );
+        }
+
+        return ListView.separated(
+          itemCount: snapshot.data!.docs.length,
+          separatorBuilder: (context, index) => const Divider(height: 1, indent: 70),
+          itemBuilder: (context, index) {
+            final doc = snapshot.data!.docs[index];
+            final data = doc.data() as Map<String, dynamic>;
+
+            final String categoryName = data['category_name'] ?? '';
+            final String imgUrl = data['img'] ?? '';
+            final dynamic subcategory = data['subcategory'];
+
+            return ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              onTap: () {
+                categoryProvider.setCategory(categoryName);
+                categoryProvider.setCategorySnapshot(doc);
+
+                if (isForForm == true) {
+                  if (subcategory == null) {
+                    Navigator.of(context).pushNamed(SellCarForm.screenId);
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (builder) => SubCategoryScreen(
+                          doc: doc,
+                          isForForm: true,
                         ),
                       ),
-                      trailing: doc['subcategory'] != null
-                          ? const Icon(
-                              Icons.arrow_forward_ios,
-                              size: 12,
-                            )
-                          : null,
-                    ));
-              }));
-        });
+                    );
+                  }
+                } else {
+                  if (subcategory == null) {
+                    Navigator.of(context).pushNamed(ProductByCategory.screenId);
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (builder) => SubCategoryScreen(
+                          doc: doc,
+                        ),
+                      ),
+                    );
+                  }
+                }
+              },
+              leading: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  width: 45,
+                  height: 45,
+                  color: Colors.grey.shade100,
+                  child: imgUrl.isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: imgUrl,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => const Center(
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: primaryColor,
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => const Icon(
+                            Icons.category_outlined,
+                            color: greyColor,
+                          ),
+                        )
+                      : const Icon(Icons.category_outlined, color: greyColor),
+                ),
+              ),
+              title: Text(
+                categoryName,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: blackColor,
+                ),
+              ),
+              trailing: subcategory != null
+                  ? const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 14,
+                      color: greyColor,
+                    )
+                  : null,
+            );
+          },
+        );
+      },
+    );
   }
 }
