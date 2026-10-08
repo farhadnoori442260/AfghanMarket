@@ -1,17 +1,19 @@
-import 'package:bechdal_app/forms/common_form.dart';
-import 'package:bechdal_app/provider/category_provider.dart';
-import 'package:bechdal_app/screens/category/product_by_category_screen.dart';
-import 'package:bechdal_app/services/auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../constants/colors.dart';
+import 'package:kalino_app/constants/colors.dart';
+import 'package:kalino_app/forms/common_form.dart';
+import 'package:kalino_app/provider/category_provider.dart';
+import 'package:kalino_app/screens/category/product_by_category_screen.dart';
+import 'package:kalino_app/services/auth.dart';
 
 class SubCategoryScreen extends StatefulWidget {
   final DocumentSnapshot? doc;
   final bool? isForForm;
   static const String screenId = 'subcategory_screen';
+
   const SubCategoryScreen({Key? key, this.doc, this.isForForm})
       : super(key: key);
 
@@ -20,67 +22,118 @@ class SubCategoryScreen extends StatefulWidget {
 }
 
 class _SubCategoryScreenState extends State<SubCategoryScreen> {
+  final Auth _authService = Auth();
+
   @override
   Widget build(BuildContext context) {
-    var categoryProvider = Provider.of<CategoryProvider>(context);
+    final categoryProvider = Provider.of<CategoryProvider>(context);
+    final String categoryName = widget.doc != null && widget.doc!.exists
+        ? (widget.doc!['category_name'] ?? '')
+        : 'title_subcategories'.tr();
+
     return Scaffold(
+      backgroundColor: whiteColor,
       appBar: AppBar(
-        elevation: 0,
-        iconTheme: IconThemeData(color: blackColor),
+        elevation: 1,
+        iconTheme: const IconThemeData(color: blackColor),
         backgroundColor: whiteColor,
         title: Text(
-          widget.doc!['category_name'] ?? '',
-          style: TextStyle(color: blackColor),
+          categoryName,
+          style: const TextStyle(
+            color: blackColor,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
         ),
       ),
-      body: _body(widget.doc, categoryProvider, widget.isForForm),
+      body: _buildBody(categoryProvider),
     );
   }
 
-  _body(args, CategoryProvider categoryProvider, bool? isForForm) {
-    Auth authService = Auth();
-    return FutureBuilder<DocumentSnapshot>(
-        future: authService.categories.doc(args.id).get(),
-        builder:
-            (BuildContext context, AsyncSnapshot<DocumentSnapshot> snapshot) {
-          if (snapshot.hasError) {
-            return Container();
-          }
+  Widget _buildBody(CategoryProvider categoryProvider) {
+    if (widget.doc == null) {
+      return Center(
+        child: Text('msg_no_subcategories'.tr()),
+      );
+    }
 
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: CircularProgressIndicator(
-                color: secondaryColor,
+    return FutureBuilder<DocumentSnapshot>(
+      future: _authService.categories.doc(widget.doc!.id).get(),
+      builder:
+          (BuildContext context, AsyncSnapshot<DocumentSnapshot> snapshot) {
+        if (snapshot.hasError) {
+          return Center(
+            child: Text('msg_error_loading'.tr()),
+          );
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(
+              color: secondaryColor,
+            ),
+          );
+        }
+
+        if (!snapshot.hasData || !snapshot.data!.exists) {
+          return Center(
+            child: Text('msg_no_subcategories'.tr()),
+          );
+        }
+
+        final Map<String, dynamic>? dataMap =
+            snapshot.data!.data() as Map<String, dynamic>?;
+
+        final List<dynamic> subcategories =
+            (dataMap != null && dataMap['subcategory'] != null)
+                ? List<dynamic>.from(dataMap['subcategory'])
+                : [];
+
+        if (subcategories.isEmpty) {
+          return Center(
+            child: Text('msg_no_subcategories'.tr()),
+          );
+        }
+
+        return ListView.separated(
+          itemCount: subcategories.length,
+          separatorBuilder: (context, index) =>
+              const Divider(height: 1, indent: 16, endIndent: 16),
+          itemBuilder: (context, index) {
+            final String subCategoryName = subcategories[index].toString();
+
+            return ListTile(
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              onTap: () {
+                categoryProvider.setSubCategory(subCategoryName);
+
+                if (widget.isForForm == true) {
+                  Navigator.pushNamed(context, CommonForm.screenId);
+                } else {
+                  Navigator.pushNamed(
+                    context,
+                    ProductByCategory.screenId,
+                  );
+                }
+              },
+              title: Text(
+                subCategoryName,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: blackColor,
+                ),
+              ),
+              trailing: const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 14,
+                color: greyColor,
               ),
             );
-          }
-          var data = snapshot.data!['subcategory'];
-          return ListView.builder(
-              itemCount: data.length,
-              itemBuilder: ((context, index) {
-                return Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: ListTile(
-                      onTap: () {
-                        categoryProvider.setSubCategory(data[index]);
-
-                        if (isForForm == true) {
-                          Navigator.pushNamed(context, CommonForm.screenId);
-                        } else {
-                          Navigator.pushNamed(
-                            context,
-                            ProductByCategory.screenId,
-                          );
-                        }
-                      },
-                      title: Text(
-                        data[index],
-                        style: const TextStyle(
-                          fontSize: 15,
-                        ),
-                      ),
-                    ));
-              }));
-        });
+          },
+        );
+      },
+    );
   }
 }
