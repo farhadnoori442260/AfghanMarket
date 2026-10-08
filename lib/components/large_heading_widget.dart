@@ -1,9 +1,10 @@
-import 'package:bechdal_app/constants/colors.dart';
-import 'package:bechdal_app/screens/auth/login_screen.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
-class LargeHeadingWidget extends StatefulWidget {
+import 'package:kalino_app/constants/colors.dart';
+import 'package:kalino_app/screens/auth/login_screen.dart';
+
+class LargeHeadingWidget extends StatelessWidget {
   final String heading;
   final double? headingTextSize;
   final Color? headingTextColor;
@@ -14,75 +15,71 @@ class LargeHeadingWidget extends StatefulWidget {
   final Color? anotherTaglineColor;
   final bool? taglineNavigation;
 
-  const LargeHeadingWidget(
-      {Key? key,
-      required this.heading,
-      required this.subHeading,
-      this.subheadingTextSize,
-      this.headingTextSize,
-      this.subheadingTextColor,
-      this.headingTextColor,
-      this.anotherTaglineText,
-      this.anotherTaglineColor,
-      this.taglineNavigation})
-      : super(key: key);
+  const LargeHeadingWidget({
+    Key? key,
+    required this.heading,
+    required this.subHeading,
+    this.subheadingTextSize,
+    this.headingTextSize,
+    this.subheadingTextColor,
+    this.headingTextColor,
+    this.anotherTaglineText,
+    this.anotherTaglineColor,
+    this.taglineNavigation,
+  }) : super(key: key);
 
-  @override
-  State<LargeHeadingWidget> createState() => _LargeHeadingWidgetState();
-}
-
-class _LargeHeadingWidgetState extends State<LargeHeadingWidget> {
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 250,
-      child: Padding(
-        padding: const EdgeInsets.only(top: 100),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 30),
-              child: Text(
-                widget.heading,
-                style: TextStyle(
-                    color: widget.headingTextColor ?? blackColor,
-                    fontSize: widget.headingTextSize ?? 40,
-                    fontWeight: FontWeight.bold),
-              ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            heading,
+            style: TextStyle(
+              color: headingTextColor ?? blackColor,
+              fontSize: headingTextSize ?? 32,
+              fontWeight: FontWeight.bold,
+              height: 1.2,
             ),
-            Padding(
-              padding: const EdgeInsets.only(left: 30),
-              child: RichText(
-                text: TextSpan(
-                    text: widget.subHeading,
-                    style: TextStyle(
-                      fontFamily: 'Oswald',
-                      color: widget.subheadingTextColor ?? greyColor,
-                      fontSize: widget.subheadingTextSize ?? 25,
-                    ),
-                    children: [
-                      widget.anotherTaglineText != null
-                          ? TextSpan(
-                              recognizer: TapGestureRecognizer()
-                                ..onTap = widget.taglineNavigation != null
-                                    ? () {
-                                        Navigator.pushReplacementNamed(
-                                            context, LoginScreen.screenId);
-                                      }
-                                    : () {},
-                              text: widget.anotherTaglineText,
-                              style: TextStyle(
-                                color: widget.anotherTaglineColor ?? greyColor,
-                                fontSize: widget.subheadingTextSize ?? 25,
-                              ),
-                            )
-                          : const TextSpan(),
-                    ]),
+          ),
+          const SizedBox(height: 8),
+          RichText(
+            text: TextSpan(
+              text: subHeading,
+              style: TextStyle(
+                color: subheadingTextColor ?? greyColor,
+                fontSize: subheadingTextSize ?? 18,
+                height: 1.4,
               ),
-            )
-          ],
-        ),
+              children: [
+                if (anotherTaglineText != null) ...[
+                  const TextSpan(text: ' '),
+                  TextSpan(
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = taglineNavigation == true
+                          ? () {
+                              Navigator.pushReplacementNamed(
+                                  context, LoginScreen.screenId);
+                            }
+                          : null,
+                    text: anotherTaglineText,
+                    style: TextStyle(
+                      color: anotherTaglineColor ?? primaryColor,
+                      fontSize: subheadingTextSize ?? 18,
+                      fontWeight: FontWeight.bold,
+                      decoration: taglineNavigation == true
+                          ? TextDecoration.underline
+                          : TextDecoration.none,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
