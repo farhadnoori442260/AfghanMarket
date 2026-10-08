@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 
-class PopUpMenuModel {
-  String title;
-  IconData icon;
+class PopUpMenuModel<T> {
+  final T value;
+  final String title;
+  final IconData icon;
 
-  PopUpMenuModel(this.title, this.icon);
+  const PopUpMenuModel({
+    required this.value,
+    required this.title,
+    required this.icon,
+  });
 }
