@@ -1,16 +1,15 @@
-import 'package:bechdal_app/constants/colors.dart';
-import 'package:bechdal_app/provider/category_provider.dart';
-import 'package:bechdal_app/provider/product_provider.dart';
-import 'package:bechdal_app/screens/product/product_card.dart';
-import 'package:bechdal_app/screens/product/product_details_screen.dart';
-import 'package:bechdal_app/services/auth.dart';
-import 'package:bechdal_app/services/user.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+
+import 'package:kalino_app/constants/colors.dart';
+import 'package:kalino_app/provider/category_provider.dart';
+import 'package:kalino_app/provider/product_provider.dart';
+import 'package:kalino_app/screens/product/product_card.dart';
+import 'package:kalino_app/services/auth.dart';
 
 class ProductListing extends StatefulWidget {
   final bool? isProductByCategory;
@@ -22,97 +21,132 @@ class ProductListing extends StatefulWidget {
 }
 
 class _ProductListingState extends State<ProductListing> {
-  Auth authService = Auth();
+  final Auth _authService = Auth();
 
   @override
   Widget build(BuildContext context) {
-    var productProvider = Provider.of<ProductProvider>(context);
     var categoryProvider = Provider.of<CategoryProvider>(context);
     final numberFormat = NumberFormat('##,##,##0');
+
+    Query query = _authService.products.orderBy('posted_at', descending: true);
+
+    if (widget.isProductByCategory == true) {
+      if (categoryProvider.selectedCategory == 'Cars') {
+        query = _authService.products
+            .where('category', isEqualTo: categoryProvider.selectedCategory)
+            .orderBy('posted_at', descending: true);
+      } else {
+        query = _authService.products
+            .where('category', isEqualTo: categoryProvider.selectedCategory)
+            .where('subcategory',
+                isEqualTo: categoryProvider.selectedSubCategory)
+            .orderBy('posted_at', descending: true);
+      }
+    }
+
     return FutureBuilder<QuerySnapshot>(
-        future: (widget.isProductByCategory == true)
-            ? categoryProvider.selectedCategory == 'Cars'
-                ? authService.products
-                    .orderBy('posted_at')
-                    .where('category',
-                        isEqualTo: categoryProvider.selectedCategory)
-                    .get()
-                : authService.products
-                    .orderBy('posted_at')
-                    .where('category',
-                        isEqualTo: categoryProvider.selectedCategory)
-                    .where('subcategory',
-                        isEqualTo: categoryProvider.selectedSubCategory)
-                    .get()
-            : authService.products.orderBy('posted_at').get(),
-        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-          if (snapshot.hasError) {
-            return const Center(child: Text('Error loading products..'));
-          }
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: CircularProgressIndicator(
-                color: secondaryColor,
+      future: query.get(),
+      builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+        if (snapshot.hasError) {
+          return Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Center(
+              child: Text(
+                'msg_error_loading_products'.tr(),
+                style: const TextStyle(color: errorColor, fontSize: 14),
               ),
-            );
-          }
-          return (snapshot.data!.docs.isEmpty)
-              ? SizedBox(
-                  height: MediaQuery.of(context).size.height - 50,
-                  child: const Center(
-                    child: Text('No Products Found.'),
+            ),
+          );
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 40),
+            child: Center(
+              child: CircularProgressIndicator(
+                color: primaryColor,
+              ),
+            ),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Container(
+            padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 20),
+            width: double.infinity,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  CupertinoIcons.square_stack_3d_up_slash,
+                  size: 64,
+                  color: disabledColor.withOpacity(0.6),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'msg_no_products_found'.tr(),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: greyMediumColor,
                   ),
-                )
-              : Container(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      (widget.isProductByCategory != null)
-                          ? const SizedBox()
-                          : Container(
-                              child: Column(
-                                children: [
-                                  Text(
-                                    'Recommendation',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18,
-                                      color: blackColor,
-                                    ),
-                                  ),
-                                  const SizedBox(
-                                    height: 10,
-                                  ),
-                                ],
-                              ),
-                            ),
-                      GridView.builder(
-                          physics: const ScrollPhysics(),
-                          scrollDirection: Axis.vertical,
-                          shrinkWrap: true,
-                          gridDelegate:
-                              const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: 200,
-                            childAspectRatio: 2 / 2.8,
-                            mainAxisExtent: 250,
-                            crossAxisSpacing: 8,
-                            mainAxisSpacing: 10,
-                          ),
-                          itemCount: snapshot.data!.size,
-                          itemBuilder: (BuildContext context, int index) {
-                            var data = snapshot.data!.docs[index];
-                            var price = int.parse(data['price']);
-                            String formattedPrice = numberFormat.format(price);
-                            return ProductCard(
-                              data: data,
-                              formattedPrice: formattedPrice,
-                              numberFormat: numberFormat,
-                            );
-                          }),
-                    ],
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (widget.isProductByCategory == null) ...[
+                Text(
+                  'title_recommendations'.tr(),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: blackColor,
                   ),
-                );
-        });
+                ),
+                const SizedBox(height: 14),
+              ],
+              GridView.builder(
+                physics: const NeverScrollableScrollPhysics(),
+                shrinkWrap: true,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 0.72,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                ),
+                itemCount: snapshot.data!.size,
+                itemBuilder: (BuildContext context, int index) {
+                  var data = snapshot.data!.docs[index];
+                  var priceRaw = data['price'];
+                  int price = 0;
+
+                  if (priceRaw is int) {
+                    price = priceRaw;
+                  } else if (priceRaw is String) {
+                    price = int.tryParse(priceRaw) ?? 0;
+                  }
+
+                  String formattedPrice = numberFormat.format(price);
+
+                  return ProductCard(
+                    data: data,
+                    formattedPrice: formattedPrice,
+                    numberFormat: numberFormat,
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
