@@ -1,9 +1,11 @@
-import 'package:bechdal_app/components/custom_icon_button.dart';
-import 'package:bechdal_app/constants/colors.dart';
-import 'package:bechdal_app/screens/auth/phone_auth_screen.dart';
-import 'package:bechdal_app/services/auth.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
+import 'package:kalino_app/constants/colors.dart';
+import 'package:kalino_app/screens/auth/phone_auth_screen.dart';
+import 'package:kalino_app/services/auth.dart';
+import 'package:kalino_app/widgets/custom_icon_button.dart';
 
 class SignUpButtons extends StatefulWidget {
   const SignUpButtons({
@@ -15,48 +17,76 @@ class SignUpButtons extends StatefulWidget {
 }
 
 class _SignUpButtonsState extends State<SignUpButtons> {
-  Auth authService = Auth();
+  final Auth _authService = Auth();
+  bool _isGoogleLoading = false;
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        InkWell(
-          onTap: () {
-            Navigator.push(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // دکمه ثبت‌نام با شماره موبایل
+          CustomIconButton(
+            text: 'btn_phone_signup'.tr(),
+            imageIcon: 'assets/phone.png',
+            bgColor: primaryColor,
+            textColor: whiteColor,
+            imageOrIconColor: whiteColor,
+            imageOrIconSize: 20,
+            onTap: () {
+              Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (builder) => const PhoneAuthScreen(
-                          isFromLogin: false,
-                        )));
-          },
-          child: CustomIconButton(
-            text: 'Signup with Phone',
-            imageIcon: 'assets/phone.png',
-            bgColor: greyColor,
-            imageOrIconColor: whiteColor,
-            imageOrIconRadius: 20,
+                  builder: (context) => const PhoneAuthScreen(
+                    isFromLogin: false,
+                  ),
+                ),
+              );
+            },
           ),
-        ),
-        const SizedBox(
-          height: 10,
-        ),
-        InkWell(
-          onTap: () async {
-            User? user = await Auth.signInWithGoogle(context: context);
-            if (user != null) {
-              authService.getAdminCredentialPhoneNumber(context, user);
-            }
-          },
-          child: CustomIconButton(
-            text: 'Signup with Google',
-            imageIcon: 'assets/google.png',
-            bgColor: whiteColor,
-          ),
-        ),
-        const SizedBox(
-          height: 10,
-        ),
-      ],
+          const SizedBox(height: 14),
+
+          // دکمه ثبت‌نام با حساب گوگل
+          _isGoogleLoading
+              ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(12.0),
+                    child: CircularProgressIndicator(color: primaryColor),
+                  ),
+                )
+              : CustomIconButton(
+                  text: 'btn_google_signup'.tr(),
+                  imageIcon: 'assets/google.png',
+                  bgColor: whiteColor,
+                  textColor: blackColor,
+                  border: Border.all(color: greyLightColor, width: 1.5),
+                  imageOrIconSize: 20,
+                  onTap: () async {
+                    setState(() {
+                      _isGoogleLoading = true;
+                    });
+                    try {
+                      User? user =
+                          await Auth.signInWithGoogle(context: context);
+                      if (user != null && mounted) {
+                        _authService.getAdminCredentialPhoneNumber(
+                            context, user);
+                      }
+                    } finally {
+                      if (mounted) {
+                        setState(() {
+                          _isGoogleLoading = false;
+                        });
+                      }
+                    }
+                  },
+                ),
+          const SizedBox(height: 12),
+        ],
+      ),
     );
   }
 }
