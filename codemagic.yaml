@@ -6,7 +6,7 @@ workflows:
 
     environment:
       groups:
-        - kalino_env # یا همان safir_new اگر متغیرها یکسان هستند
+        - kalino_env # یا safir_new
       flutter: 3.29.3
       java: 21
 
@@ -16,6 +16,15 @@ workflows:
           flutter --version
           dart --version
 
+      - name: Set up Firebase Config (google-services.json)
+        script: |
+          if [ -n "$ANDROID_FIREBASE_JSON" ]; then
+            echo $ANDROID_FIREBASE_JSON | base64 --decode > android/app/google-services.json
+            echo "google-services.json successfully created."
+          else
+            echo "ANDROID_FIREBASE_JSON variable not found, using repository file."
+          fi
+
       - name: Clean Flutter cache
         script: |
           flutter clean
@@ -23,6 +32,10 @@ workflows:
       - name: Get Flutter packages
         script: |
           flutter pub get
+
+      - name: Set permissions for Gradle Wrapper
+        script: |
+          chmod +x android/gradlew
 
       - name: Set up Keystore
         script: |
