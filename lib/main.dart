@@ -73,7 +73,7 @@ class KalinoApp extends StatelessWidget {
       supportedLocales: context.supportedLocales,
       locale: context.locale,
       theme: ThemeData(
-        fontFamily: 'IRANYekan',
+        fontFamily: 'IranYekan', // مطابق با اسم فونت در pubspec.yaml
         primaryColor: blackColor,
         scaffoldBackgroundColor: whiteColor,
         colorScheme: ColorScheme.fromSwatch().copyWith(
