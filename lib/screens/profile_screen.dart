@@ -53,6 +53,116 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  // دیالوگ/منوی انتخاب زبان با آیکون کره زمین و دکمه تایید
+  void _showLanguageBottomSheet() {
+    String selectedLanguageCode = context.locale.languageCode;
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // آیکون کره زمین و عنوان
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.language, color: primaryColor, size: 28),
+                      const SizedBox(width: 8),
+                      Text(
+                        'menu_language_settings'.tr(),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: blackColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // زبان دری
+                  RadioListTile<String>(
+                    title: const Text('دری (Persian)', style: TextStyle(fontWeight: FontWeight.w600)),
+                    value: 'fa',
+                    groupValue: selectedLanguageCode,
+                    activeColor: primaryColor,
+                    onChanged: (value) {
+                      setModalState(() {
+                        selectedLanguageCode = value!;
+                      });
+                    },
+                  ),
+
+                  // زبان پشتو
+                  RadioListTile<String>(
+                    title: const Text('پښتو (Pashto)', style: TextStyle(fontWeight: FontWeight.w600)),
+                    value: 'ps',
+                    groupValue: selectedLanguageCode,
+                    activeColor: primaryColor,
+                    onChanged: (value) {
+                      setModalState(() {
+                        selectedLanguageCode = value!;
+                      });
+                    },
+                  ),
+
+                  // زبان انگلیسی
+                  RadioListTile<String>(
+                    title: const Text('English', style: TextStyle(fontWeight: FontWeight.w600)),
+                    value: 'en',
+                    groupValue: selectedLanguageCode,
+                    activeColor: primaryColor,
+                    onChanged: (value) {
+                      setModalState(() {
+                        selectedLanguageCode = value!;
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // دکمه تایید تغییر زبان
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: () {
+                        context.setLocale(Locale(selectedLanguageCode));
+                        Navigator.pop(context);
+                      },
+                      child: Text(
+                        'btn_confirm'.tr(),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: whiteColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -130,7 +240,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 24),
 
-              // گزینه های منوی حساب کاربر
+              // گزینه‌های منوی حساب کاربر
               _buildProfileOption(
                 icon: Icons.favorite_border,
                 title: 'menu_my_favorites'.tr(),
@@ -149,7 +259,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: Icons.language,
                 title: 'menu_language_settings'.tr(),
                 onTap: () {
-                  // تغییر زبان برنامه
+                  _showLanguageBottomSheet();
                 },
               ),
               _buildProfileOption(
