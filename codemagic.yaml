@@ -35,7 +35,12 @@ workflows:
 
       - name: Set permissions for Gradle Wrapper
         script: |
-          chmod +x android/gradlew
+          if [ -f "android/gradlew" ]; then
+            chmod +x android/gradlew
+            echo "Gradlew permissions set."
+          else
+            echo "android/gradlew not found, skipping permission change..."
+          fi
 
       - name: Set up Keystore
         script: |
@@ -56,4 +61,4 @@ workflows:
           flutter build apk --release --split-per-abi
 
     artifacts:
-      - build/app/outputs/flutter-apk/*-release.apk
+      - build/app/outputs/flutter-apk/*.apk
