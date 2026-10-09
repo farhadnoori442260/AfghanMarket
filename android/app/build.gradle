@@ -1,40 +1,35 @@
+plugins {
+    id "com.android.application"
+    id "com.google.gms.google-services"
+    id "kotlin-android"
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+// خواندن local.properties
 def localProperties = new Properties()
-def localPropertiesFile = rootProject.file('local.properties')
+def localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
-    localPropertiesFile.withReader('UTF-8') { reader ->
+    localPropertiesFile.withReader("UTF-8") { reader ->
         localProperties.load(reader)
     }
 }
 
-def flutterRoot = localProperties.getProperty('flutter.sdk')
-if (flutterRoot == null) {
-    throw new GradleException("Flutter SDK not found. Define location with flutter.sdk in the local.properties file.")
-}
-
-def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
-if (flutterVersionCode == null) {
-    flutterVersionCode = '1'
-}
-
-def flutterVersionName = localProperties.getProperty('flutter.versionName')
-if (flutterVersionName == null) {
-    flutterVersionName = '1.0.0'
-}
-
-apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
-apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
-apply plugin: 'com.google.gms.google-services'
-
+// خواندن key.properties برای امضای release
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file('key.properties')
 if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+    keystorePropertiesFile.withReader('UTF-8') { reader ->
+        keystoreProperties.load(reader)
+    }
 }
 
+def flutterVersionCode = localProperties.getProperty("flutter.versionCode") ?: "1"
+def flutterVersionName = localProperties.getProperty("flutter.versionName") ?: "1.0"
+
 android {
-    namespace "com.kalino.app"
-    compileSdkVersion 34
+    namespace "com.example.kalino_app"
+    compileSdk 36
+    ndkVersion "28.1.13356709"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
@@ -45,48 +40,63 @@ android {
         jvmTarget = '17'
     }
 
-    sourceSets {
-        main.java.srcDirs += 'src/main/kotlin'
-    }
-
     defaultConfig {
-        applicationId "com.kalino.app"
-        minSdkVersion 21
-        targetSdkVersion 34
+        applicationId "com.example.kalino_app"
+        minSdk 24
+        targetSdk 36
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
-        multiDexEnabled true
     }
 
     signingConfigs {
         release {
-            keyAlias keystoreProperties['keyAlias']
-            keyPassword keystoreProperties['keyPassword']
-            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
-            storePassword keystoreProperties['storePassword']
+            if (keystorePropertiesFile.exists()) {
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+            }
         }
     }
 
     buildTypes {
         release {
+            // اتصال به کلید امضای اصلی release
             signingConfig signingConfigs.release
             minifyEnabled false
             shrinkResources false
+        }
+        debug {
+            signingConfig signingConfigs.debug
         }
     }
 }
 
 flutter {
-    source '../..'
+    source "../.."
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    
-    // Firebase Bill of Materials (BoM)
     implementation platform('com.google.firebase:firebase-bom:32.7.0')
-    implementation 'com.google.firebase:firebase-analytics'
-    
-    // Modern AndroidX MultiDex
-    implementation 'androidx.multidex:multidex:2.0.1'
+}
+
+// اجبار تمام پکیج‌ها به استفاده از جاوا ۱۷
+subprojects {
+    afterEvaluate { project ->
+        if (project.hasProperty("android")) {
+            project.android {
+                compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_17
+                    targetCompatibility JavaVersion.VERSION_17
+                }
+            }
+        }
+        if (project.plugins.hasPlugin('kotlin-android')) {
+            project.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+                kotlinOptions {
+                    jvmTarget = "17"
+                }
+            }
+        }
+    }
 }
