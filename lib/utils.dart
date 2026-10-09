@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -7,71 +8,145 @@ import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart'
     as permission_handler;
-import 'constants/widgets.dart';
 
-String? selectedLocation = '';
-bool? serviceEnabled;
-LocationPermission? permission;
-Future<String?> getLocationAndAddress(context) async {
-  Position? position =
-      await getCurrentLocation(context, serviceEnabled, permission);
+import 'package:kalino_app/constants/widgets.dart';
+
+/// دریافت موقعیت و آدرس متنی به صورت یکجا
+Future<String?> getLocationAndAddress(BuildContext context) async {
+  final Position? position = await getCurrentLocation(context);
+  if (position == null) return null;
+
   if (kDebugMode) {
-    print('positions are $position');
+    print('Fetched Position: ${position.latitude}, ${position.longitude}');
   }
-  selectedLocation = await getFetchedAddress(context, position);
-  if (selectedLocation != null) {
-    return selectedLocation;
+
+  if (context.mounted) {
+    return await getFetchedAddress(context, position);
   }
   return null;
 }
 
+/// تبدیل مختصات جغرافیایی به آدرس قابل فهم برای افغانستان
 Future<String?> getFetchedAddress(
-    BuildContext context, Position? position) async {
-  List<Placemark> placemarks =
-      await placemarkFromCoordinates(position!.latitude, position.longitude);
-  Placemark place = placemarks[0];
-  if (kDebugMode) {
-    print(place);
+    BuildContext context, Position position) async {
+  try {
+    List<Placemark> placemarks = await placemarkFromCoordinates(
+      position.latitude,
+      position.longitude,
+    );
+
+    if (placemarks.isNotEmpty) {
+      Placemark place = placemarks[0];
+      if (kDebugMode) {
+        print('Placemark data: $place');
+      }
+
+      final String area = place.subLocality ?? '';
+      final String city = place.locality ?? place.subAdministrativeArea ?? '';
+      final String province = place.administrativeArea ?? '';
+
+      List<String> addressParts = [];
+      if (area.isNotEmpty) addressParts.add(area);
+      if (city.isNotEmpty) addressParts.add(city);
+      if (province.isNotEmpty && province != city) addressParts.add(province);
+
+      if (addressParts.isNotEmpty) {
+        return addressParts.join(', ');
+      }
+    }
+  } catch (e) {
+    if (kDebugMode) {
+      print('Geocoding error: $e');
+    }
   }
-  return '${place.locality}, ${place.postalCode}';
+  return 'msg_unknown_location'.tr();
 }
 
-Future<dynamic> getCurrentLocation(context, serviceEnabled, permission) async {
-  serviceEnabled = await Geolocator.isLocationServiceEnabled();
-  if (!serviceEnabled!) {
+/// دریافت مختصات فعلی دستگاه
+Future<Position?> getCurrentLocation(BuildContext context) async {
+  bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  if (!serviceEnabled) {
     await Geolocator.openLocationSettings();
-    return customSnackBar(
-        context: context, content: 'Location services are disabled.');
+    if (context.mounted) {
+      customSnackBar(
+        context: context,
+        content: 'msg_location_services_disabled'.tr(),
+      );
+    }
+    return null;
   }
 
-  permission = await Geolocator.checkPermission();
+  LocationPermission permission = await Geolocator.checkPermission();
   if (permission == LocationPermission.denied) {
     permission = await Geolocator.requestPermission();
     if (permission == LocationPermission.denied) {
-      return customSnackBar(
+      if (context.mounted) {
+        customSnackBar(
           context: context,
-          content: 'Please Enable Location Service to continue');
+          content: 'msg_enable_location_service'.tr(),
+        );
+      }
+      return null;
     }
   }
 
   if (permission == LocationPermission.deniedForever) {
-    return permission_handler.openAppSettings();
+    await permission_handler.openAppSettings();
+    return null;
   }
-  return await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high);
+
+  try {
+    return await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+  } catch (e) {
+    if (kDebugMode) {
+      print('Error getting current position: $e');
+    }
+    return null;
+  }
 }
 
+/// آپلود تصویر آگهی در Firebase Storage
 Future<String> uploadFile(BuildContext context, String filePath) async {
-  String imageName = 'product_images/${DateTime.now().microsecondsSinceEpoch}';
+  final String imageName =
+      'product_images/${DateTime.now().microsecondsSinceEpoch}.jpg';
   String downloadUrl = '';
   final file = File(filePath);
-  try {
-    await FirebaseStorage.instance.ref(imageName).putFile(file);
-    downloadUrl =
-        await FirebaseStorage.instance.ref(imageName).getDownloadURL();
-    print(downloadUrl);
-  } on FirebaseException catch (e) {
-    customSnackBar(context: context, content: e.code);
+
+  if (!file.existsSync()) {
+    if (context.mounted) {
+      customSnackBar(
+        context: context,
+        content: 'msg_file_not_found'.tr(),
+      );
+    }
+    return '';
   }
+
+  try {
+    final ref = FirebaseStorage.instance.ref().child(imageName);
+    await ref.putFile(file);
+    downloadUrl = await ref.getDownloadURL();
+
+    if (kDebugMode) {
+      print('Uploaded file download URL: $downloadUrl');
+    }
+  } on FirebaseException catch (e) {
+    if (context.mounted) {
+      customSnackBar(
+        context: context,
+        content: e.message ?? e.code,
+      );
+    }
+  } catch (e) {
+    if (context.mounted) {
+      customSnackBar(
+        context: context,
+        content: 'msg_upload_failed'.tr(),
+      );
+    }
+  }
+
   return downloadUrl;
 }
