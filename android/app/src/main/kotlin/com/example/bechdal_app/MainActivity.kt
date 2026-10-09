@@ -1,4 +1,4 @@
-package com.example.bechdal_app
+package com.kalino.app
 
 import io.flutter.embedding.android.FlutterActivity
 
