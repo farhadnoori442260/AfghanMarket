@@ -69,8 +69,8 @@ flutter:
 
   # Custom Fonts
   fonts:
-    - family: IRANYekan
+    - family: iranyekan
       fonts:
-        - asset: assets/fonts/IRANYekanRegular.ttf
-        - asset: assets/fonts/IRANYekanBold.ttf
+        - asset: assets/fonts/iranyekanRegular.ttf
+        - asset: assets/fonts/iranyekanBold.ttf
           weight: 700
