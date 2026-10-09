@@ -1,3 +1,4 @@
+# Gradle files
 gradle-wrapper.jar
 /.gradle
 /captures/
@@ -6,8 +7,22 @@ gradle-wrapper.jar
 /local.properties
 GeneratedPluginRegistrant.java
 
-# Remember to never publicly share your keystore.
-# See https://flutter.dev/docs/deployment/android#reference-the-keystore-from-the-app
+# Android Studio & IDE files
+.idea/
+*.iml
+.navigation/
+
+# Kotlin / Build artifacts
+.kotlin/
+/app/build/
+/build/
+
+# Security & Keystore (Never commit signing keys)
 key.properties
 **/*.keystore
 **/*.jks
+**/*.p12
+**/*.pem
+
+# Firebase / Secret configs for local testing
+**/google-services.json.local
