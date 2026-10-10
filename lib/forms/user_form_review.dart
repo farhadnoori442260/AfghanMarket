@@ -297,9 +297,12 @@ class _UserFormReviewState extends State<UserFormReview> {
   Widget _userFormReviewBody() {
     return Form(
       key: _formKey,
-      child: FutureBuilder<DocumentSnapshot>(
+      child: FutureBuilder<DocumentSnapshot?>(
         future: _firebaseUser.getUserData(),
-        builder: (BuildContext context, AsyncSnapshot<DocumentSnapshot> snapshot) {
+        builder: (
+  BuildContext context,
+  AsyncSnapshot<DocumentSnapshot?> snapshot,
+) {
           if (snapshot.hasError) {
             return Center(child: Text('err_loading_review_form'.tr()));
           }
