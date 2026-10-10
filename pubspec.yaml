@@ -55,7 +55,7 @@ dependencies:
   carousel_slider: ^5.0.0
   dot_navigation_bar: ^1.0.2
   csc_picker: ^0.2.7
-  galleryimage: ^3.0.1
+  galleryimage: ^1.0.0
   custom_pop_up_menu: ^1.2.4
   flutter_chat_bubble: ^2.0.2
   search_page: ^2.3.0
