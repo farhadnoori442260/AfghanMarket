@@ -15,8 +15,8 @@ workflows:
     environment:
       groups:
         - kalino_env
-      flutter: 3.29.3
-      java: 21
+      flutter: 3.24.5  # تغییر از 3.29.3 به نسخه پایدارتر 3.24.5
+      java: 17        # تغییر جاوا به 17 برای پایداری بیشتر با Gradle
 
     scripts:
       - name: Show versions
@@ -66,7 +66,7 @@ workflows:
           keyAlias=$CM_KEY_ALIAS
           storeFile=/tmp/release.jks
           EOF
-          flutter build apk --release --split-per-abi
+          flutter build apk --release
 
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
