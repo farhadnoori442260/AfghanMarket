@@ -61,7 +61,6 @@ android {
 
     buildTypes {
         release {
-            // اتصال به کلید امضای اصلی release
             signingConfig signingConfigs.release
             minifyEnabled false
             shrinkResources false
@@ -78,33 +77,4 @@ flutter {
 
 dependencies {
     implementation platform('com.google.firebase:firebase-bom:32.7.0')
-}
-
-// تزریق هوشمند Namespace به تمام پلاگین‌های وابسته قبل از ارزیابی AGP 8
-subprojects { project ->
-    project.plugins.withId("com.android.library") {
-        project.android {
-            if (!namespace) {
-                namespace "com.example.${project.name.replace("-", "_")}"
-            }
-        }
-    }
-
-    project.afterEvaluate {
-        if (project.hasProperty("android")) {
-            project.android {
-                compileOptions {
-                    sourceCompatibility JavaVersion.VERSION_17
-                    targetCompatibility JavaVersion.VERSION_17
-                }
-            }
-        }
-        if (project.plugins.hasPlugin('kotlin-android')) {
-            project.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
-                kotlinOptions {
-                    jvmTarget = "17"
-                }
-            }
-        }
-    }
 }
