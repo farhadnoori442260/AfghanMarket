@@ -116,7 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
             return LocationTextWidget(location: data['address'].toString());
           } else if (data['location'] != null) {
             Position position = data['location'];
-            return FutureBuilder<String>(
+            return FutureBuilder<String?>(
               future: getFetchedAddress(context, position),
               builder: (context, locationSnapshot) {
                 if (locationSnapshot.hasData) {
