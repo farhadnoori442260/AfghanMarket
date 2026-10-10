@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:kalino_app/constants/colors.dart';
 import 'package:kalino_app/screens/auth/phone_auth_screen.dart';
 import 'package:kalino_app/services/auth.dart';
-import 'package:kalino_app/widgets/custom_icon_button.dart';
+import 'package:kalino_app/components/custom_icon_button.dart';
 
 class SignUpButtons extends StatefulWidget {
   const SignUpButtons({
