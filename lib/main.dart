@@ -31,6 +31,7 @@ import 'package:kalino_app/screens/welcome_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await EasyLocalization.ensureInitialized();
   await Firebase.initializeApp();
 
@@ -50,10 +51,10 @@ void main() async {
       fallbackLocale: const Locale('fa'),
       child: MultiProvider(
         providers: [
-          ChangeNotifierProvider(
+          ChangeNotifierProvider<CategoryProvider>(
             create: (_) => CategoryProvider(),
           ),
-          ChangeNotifierProvider(
+          ChangeNotifierProvider<ProductProvider>(
             create: (_) => ProductProvider(),
           ),
         ],
@@ -64,26 +65,42 @@ void main() async {
 }
 
 class KalinoApp extends StatelessWidget {
-  const KalinoApp({Key? key}) : super(key: key);
+  const KalinoApp({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // اگر زبان انتخاب‌شده انگلیسی باشد، فونت انگلیسی فعال می‌شود.
+    final bool isEnglish = context.locale.languageCode == 'en';
+
+    // fa و ps: IranYekan | en: Oswald
+    final String currentFont = isEnglish ? 'Oswald' : 'IranYekan';
+
     return MaterialApp(
       title: 'app_name'.tr(),
+      debugShowCheckedModeBanner: false,
+
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: context.locale,
+
       theme: ThemeData(
-        fontFamily: 'IranYekan',
+        useMaterial3: true,
+
+        // فونت براساس زبان فعال برنامه تغییر می‌کند.
+        fontFamily: currentFont,
+
         primaryColor: blackColor,
         scaffoldBackgroundColor: whiteColor,
-        colorScheme: ColorScheme.fromSwatch().copyWith(
-          secondary: blackColor,
+
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: blackColor,
+          primary: blackColor,
           surface: whiteColor,
         ),
       ),
-      debugShowCheckedModeBanner: false,
+
       initialRoute: SplashScreen.screenId,
+
       routes: {
         SplashScreen.screenId: (context) => const SplashScreen(),
         LoginScreen.screenId: (context) => const LoginScreen(),
