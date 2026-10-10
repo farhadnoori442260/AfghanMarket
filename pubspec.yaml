@@ -31,7 +31,6 @@ dependencies:
   connectivity_plus: ^6.0.4
   email_validator: ^3.0.0
   flutter_secure_storage: ^9.2.2
-  open_mail_app: ^0.4.5
   otp_text_field: ^1.1.0
 
   # Firebase Ecosystem
