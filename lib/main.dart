@@ -22,7 +22,7 @@ import 'package:kalino_app/screens/chat/chat_screen.dart';
 import 'package:kalino_app/screens/chat/user_chat_screen.dart';
 import 'package:kalino_app/screens/home_screen.dart';
 import 'package:kalino_app/screens/location_screen.dart';
-import 'package:kalino_app/screens/main_navigatiion_screen.dart';
+import 'package:kalino_app/screens/main_navigation_screen.dart';
 import 'package:kalino_app/screens/post/my_post_screen.dart';
 import 'package:kalino_app/screens/product/product_details_screen.dart';
 import 'package:kalino_app/screens/profile_screen.dart';
@@ -35,15 +35,16 @@ void main() async {
   await Firebase.initializeApp();
 
   await FirebaseAppCheck.instance.activate(
-    webRecaptchaSiteKey: 'recaptcha-v3-site-key',
+    androidProvider: AndroidProvider.playIntegrity,
+    webProvider: ReCaptchaV3Provider('recaptcha-v3-site-key'),
   );
 
   runApp(
     EasyLocalization(
       supportedLocales: const [
-        Locale('fa'), // دری / فارسی
-        Locale('ps'), // پشتو
-        Locale('en'), // انگلیسی
+        Locale('fa'),
+        Locale('ps'),
+        Locale('en'),
       ],
       path: 'assets/lang',
       fallbackLocale: const Locale('fa'),
@@ -73,7 +74,7 @@ class KalinoApp extends StatelessWidget {
       supportedLocales: context.supportedLocales,
       locale: context.locale,
       theme: ThemeData(
-        fontFamily: 'IranYekan', // مطابق با اسم فونت در pubspec.yaml
+        fontFamily: 'IranYekan',
         primaryColor: blackColor,
         scaffoldBackgroundColor: whiteColor,
         colorScheme: ColorScheme.fromSwatch().copyWith(
@@ -92,10 +93,14 @@ class KalinoApp extends StatelessWidget {
         WelcomeScreen.screenId: (context) => const WelcomeScreen(),
         RegisterScreen.screenId: (context) => const RegisterScreen(),
         EmailVerifyScreen.screenId: (context) => const EmailVerifyScreen(),
-        ResetPasswordScreen.screenId: (context) => const ResetPasswordScreen(),
-        CategoryListScreen.screenId: (context) => const CategoryListScreen(),
-        SubCategoryScreen.screenId: (context) => const SubCategoryScreen(),
-        MainNavigationScreen.screenId: (context) => const MainNavigationScreen(),
+        ResetPasswordScreen.screenId: (context) =>
+            const ResetPasswordScreen(),
+        CategoryListScreen.screenId: (context) =>
+            const CategoryListScreen(),
+        SubCategoryScreen.screenId: (context) =>
+            const SubCategoryScreen(),
+        MainNavigationScreen.screenId: (context) =>
+            const MainNavigationScreen(),
         ChatScreen.screenId: (context) => const ChatScreen(),
         MyPostScreen.screenId: (context) => const MyPostScreen(),
         ProfileScreen.screenId: (context) => const ProfileScreen(),
@@ -103,7 +108,8 @@ class KalinoApp extends StatelessWidget {
         UserFormReview.screenId: (context) => const UserFormReview(),
         CommonForm.screenId: (context) => const CommonForm(),
         ProductDetail.screenId: (context) => const ProductDetail(),
-        ProductByCategory.screenId: (context) => const ProductByCategory(),
+        ProductByCategory.screenId: (context) =>
+            const ProductByCategory(),
         UserChatScreen.screenId: (context) => const UserChatScreen(),
       },
     );
