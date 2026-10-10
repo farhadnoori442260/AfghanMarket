@@ -25,7 +25,7 @@
         android:usesCleartextTraffic="true">
 
         <activity
-            android:name="com.example.kalino_app.MainActivity"
+            android:name="com.kalino.app.MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
             android:taskAffinity=""
