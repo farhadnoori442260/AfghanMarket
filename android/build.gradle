@@ -16,6 +16,7 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        maven { url 'https://jitpack.io' }
     }
 }
 
@@ -30,4 +31,33 @@ subprojects {
 
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
+}
+
+// تزریق هوشمند Namespace و تنظیمات جاوا ۱۷ برای تمام پلاگین‌های جانبی (مثل open_mail_app)
+subprojects { project ->
+    project.plugins.withId("com.android.library") {
+        project.android {
+            if (!namespace) {
+                namespace "com.example.${project.name.replace("-", "_")}"
+            }
+        }
+    }
+
+    project.afterEvaluate {
+        if (project.hasProperty("android")) {
+            project.android {
+                compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_17
+                    targetCompatibility JavaVersion.VERSION_17
+                }
+            }
+        }
+        if (project.plugins.hasPlugin('kotlin-android')) {
+            project.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+                kotlinOptions {
+                    jvmTarget = "17"
+                }
+            }
+        }
+    }
 }
