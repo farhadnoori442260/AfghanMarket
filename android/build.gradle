@@ -33,30 +33,31 @@ tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
 
-// تزریق هوشمند Namespace و تنظیمات جاوا ۱۷ برای تمام پلاگین‌های جانبی (مثل open_mail_app)
+// تزریق ایمن و هوشمند Namespace و تنظیمات جاوا ۱۷ برای رفع خطای پلاگین‌های قدیمی
 subprojects { project ->
     project.plugins.withId("com.android.library") {
-        project.android {
-            if (!namespace) {
-                namespace "com.example.${project.name.replace("-", "_")}"
-            }
-        }
-    }
-
-    project.afterEvaluate {
-        if (project.hasProperty("android")) {
+        def configureAndroid = {
             project.android {
+                if (!namespace) {
+                    namespace "com.example.${project.name.replace("-", "_")}"
+                }
                 compileOptions {
                     sourceCompatibility JavaVersion.VERSION_17
                     targetCompatibility JavaVersion.VERSION_17
                 }
             }
         }
-        if (project.plugins.hasPlugin('kotlin-android')) {
-            project.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
-                kotlinOptions {
-                    jvmTarget = "17"
-                }
+        if (project.state.executed) {
+            configureAndroid()
+        } else {
+            project.afterEvaluate { configureAndroid() }
+        }
+    }
+
+    project.plugins.withId("kotlin-android") {
+        project.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+            kotlinOptions {
+                jvmTarget = "17"
             }
         }
     }
