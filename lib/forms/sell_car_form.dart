@@ -244,35 +244,42 @@ class _SellCarFormState extends State<SellCarForm> {
     );
   }
 
-  void _getCarModelList(BuildContext context, CategoryProvider categoryProvider) {
-    final models = categoryProvider.doc != null && categoryProvider.doc['models'] != null
-        ? List<String>.from(categoryProvider.doc['models'])
-        : <String>[];
+  void _getCarModelList(
+  BuildContext context,
+  CategoryProvider categoryProvider,
+) {
+  final data =
+      categoryProvider.doc?.data() as Map<String, dynamic>? ?? {};
 
-    if (models.isEmpty) {
-      customSnackBar(context: context, content: 'msg_no_models_found'.tr());
-      return;
-    }
+  final models = List<String>.from(data['models'] ?? const []);
 
-    openBottomSheet(
+  if (models.isEmpty) {
+    customSnackBar(
       context: context,
-      appBarTitle: 'sheet_select_car_model'.tr(),
-      child: ListView.builder(
-        shrinkWrap: true,
-        itemCount: models.length,
-        itemBuilder: (BuildContext context, int index) {
-          return ListTile(
-            title: Text(models[index]),
-            onTap: () {
-              setState(() {
-                _carModelNameController.text = models[index];
-              });
-              Navigator.pop(context);
-            },
-          );
-        },
-      ),
+      content: 'msg_no_models_found'.tr(),
     );
+    return;
+  }
+
+  openBottomSheet(
+    context: context,
+    appBarTitle: 'sheet_select_car_model'.tr(),
+    child: ListView.builder(
+      shrinkWrap: true,
+      itemCount: models.length,
+      itemBuilder: (BuildContext context, int index) {
+        return ListTile(
+          title: Text(models[index]),
+          onTap: () {
+            setState(() {
+              _carModelNameController.text = models[index];
+            });
+            Navigator.pop(context);
+          },
+        );
+      },
+    ),
+  );
   }
 
   Widget sellCarFormWidget(CategoryProvider categoryProvider) {
