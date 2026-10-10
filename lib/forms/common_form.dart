@@ -188,34 +188,49 @@ class _CommonFormState extends State<CommonForm> {
   }
 
   void _showBrandBottomSheet(
-      BuildContext context, CategoryProvider categoryProvider) {
-    openBottomSheet(
-      context: context,
-      appBarTitle: 'sheet_select_brand'.tr(),
-      child: ListView.builder(
-        shrinkWrap: true,
-        itemCount: categoryProvider.doc['brands']?.length ?? 0,
-        itemBuilder: (BuildContext context, int index) {
-          var brand = categoryProvider.doc['brands'][index];
-          return ListTile(
-            onTap: () {
-              setState(() {
-                _brandController.text = brand['name'];
-              });
-              Navigator.pop(context);
-            },
-            title: Text(brand['name']),
-            leading: Image.network(
-              brand['img'],
-              width: 35,
-              height: 35,
-              errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.branding_watermark_outlined),
-            ),
-          );
-        },
-      ),
-    );
+  BuildContext context,
+  CategoryProvider categoryProvider,
+) {
+  final data =
+      categoryProvider.doc?.data() as Map<String, dynamic>? ?? {};
+  final brands = List<Map<String, dynamic>>.from(
+    (data['brands'] as List? ?? const []).map(
+      (item) => Map<String, dynamic>.from(item as Map),
+    ),
+  );
+
+  openBottomSheet(
+    context: context,
+    appBarTitle: 'sheet_select_brand'.tr(),
+    child: ListView.builder(
+      shrinkWrap: true,
+      itemCount: brands.length,
+      itemBuilder: (BuildContext context, int index) {
+        final brand = brands[index];
+        final brandName = brand['name']?.toString() ?? '';
+        final brandImage = brand['img']?.toString() ?? '';
+
+        return ListTile(
+          onTap: () {
+            setState(() {
+              _brandController.text = brandName;
+            });
+            Navigator.pop(context);
+          },
+          title: Text(brandName),
+          leading: brandImage.isEmpty
+              ? const Icon(Icons.branding_watermark_outlined)
+              : Image.network(
+                  brandImage,
+                  width: 35,
+                  height: 35,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Icon(Icons.branding_watermark_outlined),
+                ),
+        );
+      },
+    ),
+  );
   }
 
   void _showCommonBottomSheet(
