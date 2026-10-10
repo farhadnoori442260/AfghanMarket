@@ -8,7 +8,6 @@ import 'package:flutter_chat_bubble/clippers/chat_bubble_clipper_5.dart';
 import 'package:intl/intl.dart';
 
 import 'package:kalino_app/constants/colors.dart';
-import 'package:kalino_app/constants/validators.dart';
 import 'package:kalino_app/services/auth.dart';
 import 'package:kalino_app/services/user.dart';
 
@@ -24,6 +23,7 @@ class ChatStream extends StatefulWidget {
 class _ChatStreamState extends State<ChatStream> {
   Stream<QuerySnapshot>? _changeMessageStream;
   DocumentSnapshot? _chatDocument;
+
   final Auth _authService = Auth();
   final UserService _firebaseUser = UserService();
 
@@ -34,17 +34,16 @@ class _ChatStreamState extends State<ChatStream> {
   }
 
   void _initChatData() {
-    if (widget.chatroomId == null) return;
+    final chatroomId = widget.chatroomId;
 
-    _firebaseUser.getChatDetails(chatroomId: widget.chatroomId).then((value) {
-      if (mounted) {
-        setState(() {
-          _changeMessageStream = value;
-        });
-      }
-    });
+    if (chatroomId == null || chatroomId.isEmpty) {
+      return;
+    }
 
-    _authService.messages.doc(widget.chatroomId).get().then((value) {
+    _changeMessageStream =
+        _firebaseUser.getChatDetails(chatroomId: chatroomId);
+
+    _authService.messages.doc(chatroomId).get().then((value) {
       if (mounted && value.exists) {
         setState(() {
           _chatDocument = value;
@@ -53,32 +52,53 @@ class _ChatStreamState extends State<ChatStream> {
     });
   }
 
-  String _formatMessageTime(int? timestamp) {
-    if (timestamp == null) return '';
-    final messageDate = DateTime.fromMicrosecondsSinceEpoch(timestamp);
-    final String formattedDate = DateFormat.yMMMd().format(messageDate);
-    final String todayDate = DateFormat.yMMMd().format(DateTime.now());
+  String _formatMessageTime(dynamic timestamp) {
+    if (timestamp == null) {
+      return '';
+    }
+
+    DateTime? messageDate;
+
+    if (timestamp is Timestamp) {
+      messageDate = timestamp.toDate();
+    } else if (timestamp is int) {
+      messageDate = DateTime.fromMicrosecondsSinceEpoch(timestamp);
+    } else if (timestamp is num) {
+      messageDate =
+          DateTime.fromMicrosecondsSinceEpoch(timestamp.toInt());
+    }
+
+    if (messageDate == null) {
+      return '';
+    }
+
+    final formattedDate = DateFormat.yMMMd().format(messageDate);
+    final todayDate = DateFormat.yMMMd().format(DateTime.now());
 
     if (formattedDate == todayDate) {
       return DateFormat('HH:mm').format(messageDate);
-    } else {
-      return DateFormat('yyyy/MM/dd - HH:mm').format(messageDate);
     }
+
+    return DateFormat('yyyy/MM/dd - HH:mm').format(messageDate);
+  }
+
+  String _formatPrice(dynamic value) {
+    final price = double.tryParse(value?.toString() ?? '') ?? 0;
+    return NumberFormat.decimalPattern('en_US').format(price);
   }
 
   Widget _buildProductBanner(Map<String, dynamic> product) {
-    final String imgUrl = product['product_img'] ?? '';
-    final String title = product['title'] ?? '';
-    final dynamic priceValue = product['price'];
-    final String priceStr = priceValue != null
-        ? intToStringFormatter(int.tryParse(priceValue.toString()) ?? 0)
-        : '0';
+    final imgUrl = product['product_img']?.toString() ?? '';
+    final title = product['title']?.toString() ?? '';
+    final priceStr = _formatPrice(product['price']);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: whiteColor,
-        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.shade200),
+        ),
       ),
       child: Row(
         children: [
@@ -93,9 +113,16 @@ class _ChatStreamState extends State<ChatStream> {
                       imageUrl: imgUrl,
                       fit: BoxFit.cover,
                       placeholder: (context, url) => const Center(
-                        child: CircularProgressIndicator(strokeWidth: 2, color: primaryColor),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: primaryColor,
+                        ),
                       ),
-                      errorWidget: (context, url, error) => const Icon(Icons.image_not_supported, size: 20, color: greyColor),
+                      errorWidget: (context, url, error) => const Icon(
+                        Icons.image_not_supported,
+                        size: 20,
+                        color: greyColor,
+                      ),
                     )
                   : const Icon(Icons.image, color: greyColor),
             ),
@@ -106,7 +133,11 @@ class _ChatStreamState extends State<ChatStream> {
               title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: blackColor),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: blackColor,
+              ),
             ),
           ),
           const SizedBox(width: 8),
@@ -129,7 +160,10 @@ class _ChatStreamState extends State<ChatStream> {
       color: Colors.grey.shade100,
       child: StreamBuilder<QuerySnapshot>(
         stream: _changeMessageStream,
-        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+        builder: (
+          BuildContext context,
+          AsyncSnapshot<QuerySnapshot> snapshot,
+        ) {
           if (snapshot.hasError) {
             return Center(
               child: Text('msg_error_loading'.tr()),
@@ -146,40 +180,59 @@ class _ChatStreamState extends State<ChatStream> {
             return const SizedBox.shrink();
           }
 
-          final chatData = _chatDocument?.data() as Map<String, dynamic>?;
-          final product = chatData?['product'] as Map<String, dynamic>?;
+          final chatData =
+              _chatDocument?.data() as Map<String, dynamic>? ?? {};
+          final productData = chatData['product'];
+          final product = productData is Map
+              ? Map<String, dynamic>.from(productData)
+              : null;
 
           return Column(
             children: [
               if (product != null) _buildProductBanner(product),
               Expanded(
                 child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 8,
+                  ),
                   itemCount: snapshot.data!.docs.length,
                   itemBuilder: (BuildContext context, int index) {
-                    final docData = snapshot.data!.docs[index].data() as Map<String, dynamic>;
-                    final String sentBy = docData['sent_by'] ?? '';
-                    final String myId = _firebaseUser.user?.uid ?? '';
-                    final bool isMe = sentBy == myId;
-                    final String timeText = _formatMessageTime(docData['time']);
+                    final rawData = snapshot.data!.docs[index].data();
+                    final docData = rawData is Map<String, dynamic>
+                        ? rawData
+                        : <String, dynamic>{};
+
+                    final sentBy = docData['sent_by']?.toString() ?? '';
+                    final myId = _firebaseUser.user?.uid ?? '';
+                    final isMe = sentBy == myId;
+                    final timeText = _formatMessageTime(docData['time']);
 
                     return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      padding: const EdgeInsets.symmetric(vertical: 4),
                       child: Column(
-                        crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                        crossAxisAlignment: isMe
+                            ? CrossAxisAlignment.end
+                            : CrossAxisAlignment.start,
                         children: [
                           ChatBubble(
                             clipper: ChatBubbleClipper5(
-                              type: isMe ? BubbleType.sendBubble : BubbleType.receiverBubble,
+                              type: isMe
+                                  ? BubbleType.sendBubble
+                                  : BubbleType.receiverBubble,
                             ),
-                            alignment: isMe ? Alignment.topRight : Alignment.topLeft,
-                            backGroundColor: isMe ? primaryColor : whiteColor,
+                            alignment: isMe
+                                ? Alignment.topRight
+                                : Alignment.topLeft,
+                            backGroundColor:
+                                isMe ? primaryColor : whiteColor,
                             child: Container(
                               constraints: BoxConstraints(
-                                maxWidth: MediaQuery.of(context).size.width * 0.72,
+                                maxWidth:
+                                    MediaQuery.of(context).size.width * 0.72,
                               ),
                               child: Text(
-                                docData['message'] ?? '',
+                                docData['message']?.toString() ?? '',
                                 style: TextStyle(
                                   color: isMe ? whiteColor : blackColor,
                                   fontSize: 14,
