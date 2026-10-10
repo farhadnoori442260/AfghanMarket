@@ -13,7 +13,7 @@ import 'package:kalino_app/constants/validators.dart';
 import 'package:kalino_app/constants/widgets.dart';
 import 'package:kalino_app/provider/category_provider.dart';
 import 'package:kalino_app/screens/location_screen.dart';
-import 'package:kalino_app/screens/main_navigatiion_screen.dart';
+import 'package:kalino_app/screens/main_navigation_screen.dart';
 import 'package:kalino_app/services/auth.dart';
 import 'package:kalino_app/services/user.dart';
 
