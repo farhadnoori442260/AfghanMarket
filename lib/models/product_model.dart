@@ -1,5 +1,25 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+class Products {
+  final DocumentSnapshot document;
+  final String title;
+  final String description;
+  final String category;
+  final String? subcategory;
+  final dynamic price;
+  final dynamic postDate;
+
+  const Products({
+    required this.document,
+    required this.title,
+    required this.description,
+    required this.category,
+    this.subcategory,
+    required this.price,
+    this.postDate,
+  });
+}
+
 class ProductModel {
   final String id;
   final String title;
@@ -29,30 +49,33 @@ class ProductModel {
     this.isApproved = true,
   });
 
-  /// تبدیل DocumentSnapshot از فایربیس به مدل Dart
   factory ProductModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
 
     return ProductModel(
       id: doc.id,
-      title: data['title'] ?? '',
-      description: data['description'] ?? '',
-      category: data['category'] ?? '',
-      subcategory: data['subcategory'],
+      title: data['title']?.toString() ?? '',
+      description: data['description']?.toString() ?? '',
+      category: data['category']?.toString() ?? '',
+      subcategory: data['subcategory']?.toString(),
       price: _parsePrice(data['price']),
-      images: List<String>.from(data['images'] ?? []),
-      sellerId: data['seller_id'] ?? data['uid'],
-      contactDetails: data['contact_details'] as Map<String, dynamic>?,
-      location: data['location'] as Map<String, dynamic>?,
+      images: List<String>.from(data['images'] ?? const []),
+      sellerId: (data['seller_id'] ?? data['seller_uid'] ?? data['uid'])
+          ?.toString(),
+      contactDetails: data['contact_details'] is Map
+          ? Map<String, dynamic>.from(data['contact_details'])
+          : null,
+      location: data['location'] is Map
+          ? Map<String, dynamic>.from(data['location'])
+          : null,
       postDate: (data['posted_at'] as Timestamp?)?.toDate() ??
           (data['postDate'] is int
-              ? DateTime.fromMillisecondsSinceEpoch(data['postDate'])
+              ? DateTime.fromMillisecondsSinceEpoch(data['postDate'] as int)
               : null),
-      isApproved: data['is_approved'] ?? true,
+      isApproved: data['is_approved'] as bool? ?? true,
     );
   }
 
-  /// تبدیل مدل به Map برای ارسال و ذخیره در Firestore
   Map<String, dynamic> toMap() {
     return {
       'title': title,
@@ -64,16 +87,14 @@ class ProductModel {
       'seller_id': sellerId,
       'contact_details': contactDetails,
       'location': location,
-      'posted_at': postDate != null ? Timestamp.fromDate(postDate!) : FieldValue.serverTimestamp(),
+      'posted_at':
+          postDate == null ? FieldValue.serverTimestamp() : Timestamp.fromDate(postDate!),
       'is_approved': isApproved,
     };
   }
 
-  /// متد کمکی برای تبدیل امن قیمت از انواع داده‌ای مختلف به double
   static double _parsePrice(dynamic value) {
-    if (value == null) return 0.0;
     if (value is num) return value.toDouble();
-    if (value is String) return double.tryParse(value) ?? 0.0;
-    return 0.0;
+    return double.tryParse(value?.toString() ?? '') ?? 0.0;
   }
 }
