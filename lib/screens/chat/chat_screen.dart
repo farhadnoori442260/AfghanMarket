@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'package:kalino_app/constants/colors.dart';
 import 'package:kalino_app/screens/category/category_list_screen.dart';
-import 'package:kalino_app/screens/chat/widgets/chat_card.dart';
+import 'package:kalino_app/screens/chat/chat_card.dart';
 import 'package:kalino_app/screens/main_navigation_screen.dart';
 import 'package:kalino_app/services/auth.dart';
 import 'package:kalino_app/services/user.dart';
