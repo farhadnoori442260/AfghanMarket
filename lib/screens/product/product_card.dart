@@ -208,8 +208,15 @@ class _ProductCardState extends State<ProductCard> {
                   onPressed: () {
                     final currentUser = FirebaseAuth.instance.currentUser;
                     if (currentUser == null) {
-                      customSnackBar(
-                          context: context, content: 'msg_login_required'.tr());
+                      ScaffoldMessenger.of(context)
+                    ..hideCurrentSnackBar()
+                    ..showSnackBar(
+                      SnackBar(
+                       content: Text('msg_login_required'.tr()),
+                        behavior: SnackBarBehavior.floating,
+                        duration: const Duration(seconds: 2),
+                       ),
+                      );
                       return;
                     }
 
