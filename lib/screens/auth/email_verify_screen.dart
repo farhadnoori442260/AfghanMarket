@@ -1,7 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
-import 'package:open_mail_app/open_mail_app.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:kalino_app/components/custom_icon_button.dart';
 import 'package:kalino_app/constants/colors.dart';
@@ -22,26 +22,27 @@ class _EmailVerifyScreenState extends State<EmailVerifyScreen> {
   final Auth _authService = Auth();
 
   Future<void> _openEmailApp() async {
-    final result = await OpenMailApp.openMailApp();
+    final Uri emailUri = Uri(scheme: 'mailto');
+    
+    try {
+      final bool launched = await launchUrl(emailUri, mode: LaunchMode.externalApplication);
+      
+      if (!mounted) return;
 
-    if (!mounted) return;
-
-    if (!result.didOpen && !result.canOpen) {
+      if (launched) {
+        Navigator.pushReplacementNamed(context, LocationScreen.screenId);
+      } else {
+        customSnackBar(
+          context: context,
+          content: 'msg_no_mail_apps'.tr(),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
       customSnackBar(
         context: context,
         content: 'msg_no_mail_apps'.tr(),
       );
-    } else if (!result.didOpen && result.canOpen) {
-      showDialog(
-        context: context,
-        builder: (_) {
-          return MailAppPickerDialog(
-            mailApps: result.options,
-          );
-        },
-      );
-    } else if (result.didOpen) {
-      Navigator.pushReplacementNamed(context, LocationScreen.screenId);
     }
   }
 
@@ -103,7 +104,7 @@ class _EmailVerifyScreenState extends State<EmailVerifyScreen> {
               const SizedBox(height: 16),
               Center(
                 child: TextButton(
-                  onTap: () {
+                  onPressed: () {
                     Navigator.pushReplacementNamed(
                       context,
                       LocationScreen.screenId,
