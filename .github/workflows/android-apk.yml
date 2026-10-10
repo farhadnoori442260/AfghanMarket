@@ -3,41 +3,62 @@ name: Build Small APK
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout project
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v5
+      - name: Setup Java
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
 
-      - uses: subosito/flutter-action@v2
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
           channel: stable
 
       - name: Get packages
         run: flutter pub get
 
-      - name: Create temporary signing file
+      - name: Create temporary debug keystore
+        run: |
+          mkdir -p "$HOME/.android"
+
+          keytool -genkeypair \
+            -v \
+            -keystore "$HOME/.android/debug.keystore" \
+            -storepass android \
+            -keypass android \
+            -alias androiddebugkey \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
+
+      - name: Create signing properties
         run: |
           cat > android/key.properties <<EOF
           storePassword=android
           keyPassword=android
           keyAlias=androiddebugkey
-          storeFile=/home/runner/.android/debug.keystore
+          storeFile=$HOME/.android/debug.keystore
           EOF
 
-      - name: Build small ARM64 release APK
+      - name: Build ARM64 release APK
         run: flutter build apk --release --target-platform android-arm64
 
-      - name: Upload small APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Kalino-ARM64-Release-APK
+          name: Kalino-ARM64-APK
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
           retention-days: 7
