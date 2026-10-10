@@ -11,7 +11,7 @@ import 'package:kalino_app/services/user.dart';
 class ProfileScreen extends StatefulWidget {
   static const String screenId = 'profile_screen';
 
-  const ProfileScreen({Key? key}) : super(key: key);
+  const ProfileScreen({super.key});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -19,6 +19,8 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+
+  // برای آینده نگه داشته شده؛ اگر در سرویس‌های دیگر استفاده‌اش می‌کنی.
   final UserService _firebaseUser = UserService();
 
   User? _currentUser;
@@ -36,125 +38,175 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (await _googleSignIn.isSignedIn()) {
         await _googleSignIn.signOut();
       }
+
       await FirebaseAuth.instance.signOut();
 
-      if (mounted) {
-        Navigator.pop(context); // بستن loadingDialogBox
-        Navigator.of(context).pushNamedAndRemoveUntil(
-          WelcomeScreen.screenId,
-          (route) => false,
-        );
-      }
+      if (!mounted) return;
+
+      Navigator.of(context, rootNavigator: true).pop();
+
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        WelcomeScreen.screenId,
+        (route) => false,
+      );
     } catch (e) {
-      if (mounted) {
-        Navigator.pop(context);
-        customSnackBar(context: context, content: 'err_something_went_wrong'.tr());
-      }
+      if (!mounted) return;
+
+      Navigator.of(context, rootNavigator: true).pop();
+
+      customSnackBar(
+        context: context,
+        content: 'err_something_went_wrong'.tr(),
+      );
     }
   }
 
-  // دیالوگ/منوی انتخاب زبان با آیکون کره زمین و دکمه تایید
   void _showLanguageBottomSheet() {
     String selectedLanguageCode = context.locale.languageCode;
 
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: whiteColor,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(20),
+        ),
       ),
-      builder: (BuildContext context) {
+      builder: (BuildContext bottomSheetContext) {
         return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // آیکون کره زمین و عنوان
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.language, color: primaryColor, size: 28),
-                      const SizedBox(width: 8),
-                      Text(
-                        'menu_language_settings'.tr(),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+          builder: (
+            BuildContext modalContext,
+            StateSetter setModalState,
+          ) {
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  24,
+                  20,
+                  24 + MediaQuery.of(modalContext).viewInsets.bottom,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.language,
+                          color: primaryColor,
+                          size: 28,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'menu_language_settings'.tr(),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: blackColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    RadioListTile<String>(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text(
+                        'دری (Persian)',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
                           color: blackColor,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
+                      value: 'fa',
+                      groupValue: selectedLanguageCode,
+                      activeColor: primaryColor,
+                      onChanged: (value) {
+                        if (value == null) return;
 
-                  // زبان دری
-                  RadioListTile<String>(
-                    title: const Text('دری (Persian)', style: TextStyle(fontWeight: FontWeight.w600)),
-                    value: 'fa',
-                    groupValue: selectedLanguageCode,
-                    activeColor: primaryColor,
-                    onChanged: (value) {
-                      setModalState(() {
-                        selectedLanguageCode = value!;
-                      });
-                    },
-                  ),
+                        setModalState(() {
+                          selectedLanguageCode = value;
+                        });
+                      },
+                    ),
 
-                  // زبان پشتو
-                  RadioListTile<String>(
-                    title: const Text('پښتو (Pashto)', style: TextStyle(fontWeight: FontWeight.w600)),
-                    value: 'ps',
-                    groupValue: selectedLanguageCode,
-                    activeColor: primaryColor,
-                    onChanged: (value) {
-                      setModalState(() {
-                        selectedLanguageCode = value!;
-                      });
-                    },
-                  ),
-
-                  // زبان انگلیسی
-                  RadioListTile<String>(
-                    title: const Text('English', style: TextStyle(fontWeight: FontWeight.w600)),
-                    value: 'en',
-                    groupValue: selectedLanguageCode,
-                    activeColor: primaryColor,
-                    onChanged: (value) {
-                      setModalState(() {
-                        selectedLanguageCode = value!;
-                      });
-                    },
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // دکمه تایید تغییر زبان
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                    RadioListTile<String>(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text(
+                        'پښتو (Pashto)',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: blackColor,
                         ),
                       ),
-                      onPressed: () {
-                        context.setLocale(Locale(selectedLanguageCode));
-                        Navigator.pop(context);
+                      value: 'ps',
+                      groupValue: selectedLanguageCode,
+                      activeColor: primaryColor,
+                      onChanged: (value) {
+                        if (value == null) return;
+
+                        setModalState(() {
+                          selectedLanguageCode = value;
+                        });
                       },
-                      child: Text(
-                        'btn_confirm'.tr(),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: whiteColor,
+                    ),
+
+                    RadioListTile<String>(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text(
+                        'English',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: blackColor,
+                        ),
+                      ),
+                      value: 'en',
+                      groupValue: selectedLanguageCode,
+                      activeColor: primaryColor,
+                      onChanged: (value) {
+                        if (value == null) return;
+
+                        setModalState(() {
+                          selectedLanguageCode = value;
+                        });
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryColor,
+                          foregroundColor: whiteColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        onPressed: () async {
+                          await context.setLocale(
+                            Locale(selectedLanguageCode),
+                          );
+
+                          if (modalContext.mounted) {
+                            Navigator.of(modalContext).pop();
+                          }
+                        },
+                        child: Text(
+                          'btn_confirm'.tr(),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           },
@@ -170,6 +222,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: whiteColor,
+        surfaceTintColor: whiteColor,
         automaticallyImplyLeading: false,
         title: Text(
           'title_my_account'.tr(),
@@ -183,10 +236,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
           child: Column(
             children: [
-              // کارت اطلاعات کاربر
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -202,7 +257,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ? NetworkImage(_currentUser!.photoURL!)
                           : null,
                       child: _currentUser?.photoURL == null
-                          ? const Icon(Icons.person, size: 36, color: primaryColor)
+                          ? const Icon(
+                              Icons.person,
+                              size: 36,
+                              color: primaryColor,
+                            )
                           : null,
                     ),
                     const SizedBox(width: 16),
@@ -211,26 +270,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _currentUser?.displayName ?? 'label_guest_user'.tr(),
+                            _currentUser?.displayName ??
+                                'label_guest_user'.tr(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: blackColor,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 4),
                           Text(
                             _currentUser?.email ??
                                 _currentUser?.phoneNumber ??
                                 'label_no_contact_info'.tr(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 13,
                               color: greyColor,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
@@ -240,39 +300,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 24),
 
-              // گزینه‌های منوی حساب کاربر
               _buildProfileOption(
                 icon: Icons.favorite_border,
                 title: 'menu_my_favorites'.tr(),
-                onTap: () {
-                  // هدایت به صفحه پسندیده‌ها
-                },
+                onTap: () {},
               ),
               _buildProfileOption(
                 icon: Icons.list_alt,
                 title: 'menu_my_ads'.tr(),
-                onTap: () {
-                  // هدایت به صفحه آگهی‌های من
-                },
+                onTap: () {},
               ),
               _buildProfileOption(
                 icon: Icons.language,
                 title: 'menu_language_settings'.tr(),
-                onTap: () {
-                  _showLanguageBottomSheet();
-                },
+                onTap: _showLanguageBottomSheet,
               ),
               _buildProfileOption(
                 icon: Icons.help_outline,
                 title: 'menu_help_support'.tr(),
-                onTap: () {
-                  // صفحه پشتیبانی
-                },
+                onTap: () {},
               ),
 
               const Divider(height: 32),
 
-              // دکمه خروج
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 8),
                 leading: Container(
@@ -281,7 +331,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     color: Colors.red.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.logout, color: Colors.red),
+                  child: const Icon(
+                    Icons.logout,
+                    color: Colors.red,
+                  ),
                 ),
                 title: Text(
                   'btn_sign_out'.tr(),
@@ -291,9 +344,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     fontSize: 16,
                   ),
                 ),
-                onTap: () {
-                  _showSignOutConfirmationDialog();
-                },
+                onTap: _showSignOutConfirmationDialog,
               ),
             ],
           ),
@@ -308,7 +359,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required VoidCallback onTap,
   }) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 4,
+      ),
       leading: Icon(icon, color: blackColor),
       title: Text(
         title,
@@ -318,32 +372,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
           color: blackColor,
         ),
       ),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: greyColor),
+      trailing: const Icon(
+        Icons.arrow_forward_ios,
+        size: 16,
+        color: greyColor,
+      ),
       onTap: onTap,
     );
   }
 
   void _showSignOutConfirmationDialog() {
-    showDialog(
+    showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('dialog_sign_out_title'.tr()),
-        content: Text('dialog_sign_out_msg'.tr()),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('btn_cancel'.tr()),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              Navigator.pop(context);
-              _signOut();
-            },
-            child: Text('btn_sign_out'.tr()),
-          ),
-        ],
-      ),
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text('dialog_sign_out_title'.tr()),
+          content: Text('dialog_sign_out_msg'.tr()),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+              child: Text('btn_cancel'.tr()),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: whiteColor,
+              ),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _signOut();
+              },
+              child: Text('btn_sign_out'.tr()),
+            ),
+          ],
+        );
+      },
     );
   }
 }
