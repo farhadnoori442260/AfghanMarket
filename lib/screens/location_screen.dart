@@ -204,9 +204,7 @@ class _BottomLocationPermissionWidgetState
                                 onTap: () async {
                                   loadingDialogBox(
                                       modalContext, 'msg_updating_location'.tr());
-                                  await getCurrentLocation(
-                                          modalContext, serviceEnabled, permission)
-                                      .then((value) {
+                                  final value = await getCurrentLocation(modalContext);
                                     if (value != null) {
                                       firebaseUser.updateFirebaseUser(
                                           modalContext, {
@@ -263,7 +261,7 @@ class _BottomLocationPermissionWidgetState
                                     vertical: 10, horizontal: 20),
                                 child: CSCPicker(
                                   layout: Layout.vertical,
-                                  defaultCountry: DefaultCountry.Afghanistan,
+                                  defaultCountry: CscCountry.Afghanistan,
                                   flagState: CountryFlag.DISABLE,
                                   dropdownDecoration: BoxDecoration(
                                     border: Border.all(color: greyColor),
