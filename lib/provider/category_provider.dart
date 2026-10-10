@@ -14,6 +14,8 @@ class CategoryProvider with ChangeNotifier {
   
   /// کلید زیردسته‌بندی (مثلاً: 'sub_mobiles')
   String? selectedSubCategoryKey;
+    String get selectedCategory => selectedCategoryKey ?? '';
+  String get selectedSubCategory => selectedSubCategoryKey ?? '';
 
   List<String> imageUploadedUrls = [];
   Map<String, dynamic> formData = {};
