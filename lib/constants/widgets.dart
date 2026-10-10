@@ -217,8 +217,16 @@ Widget customPopUpMenu({
   UserService firebaseUser = UserService();
 
   List<PopUpMenuModel> menuItems = [
-    PopUpMenuModel('menu_delete_chat'.tr(), Icons.delete_outline),
-    PopUpMenuModel('menu_mark_sold'.tr(), Icons.check_circle_outline),
+    PopUpMenuModel<String>(
+  value: 'delete',
+  title: 'menu_delete_chat'.tr(),
+  icon: Icons.delete_outline,
+),
+PopUpMenuModel<String>(
+  value: 'mark_sold',
+  title: 'menu_mark_sold'.tr(),
+  icon: Icons.check_circle_outline,
+),
   ];
 
   return CustomPopupMenu(
