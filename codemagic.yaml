@@ -15,7 +15,7 @@ workflows:
     environment:
       groups:
         - kalino_env
-      flutter: 3.19.6  # اصلاح نسخه فلاتر برای سازگاری کامل با پکیج csc_picker و رفع خطای DialogThemeData
+      flutter: 3.24.5  # هماهنگ با نیاز pubspec.yaml (پشتیبانی از Dart >= 3.4.4)
       java: 17        # تنظیم جاوا 17 برای سازگاری با Gradle
 
     scripts:
