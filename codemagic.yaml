@@ -1,6 +1,6 @@
 workflows:
   android-workflow:
-    name: Kalino Android ARM64 Release
+    name: Kalino Android Build
     max_build_duration: 60
     instance_type: mac_mini_m2
 
@@ -8,30 +8,29 @@ workflows:
       events:
         - push
       branch_patterns:
-        - pattern: master
+        - pattern: 'master'
           include: true
           source: true
 
     environment:
       groups:
         - kalino_env
-      flutter: stable
-      java: 17
+      flutter: 3.19.6  # اصلاح نسخه فلاتر برای سازگاری کامل با پکیج csc_picker و رفع خطای DialogThemeData
+      java: 17        # تنظیم جاوا 17 برای سازگاری با Gradle
 
     scripts:
       - name: Show versions
         script: |
           flutter --version
           dart --version
-          java -version
 
-      - name: Set up Firebase Config
+      - name: Set up Firebase Config (google-services.json)
         script: |
           if [ -n "$ANDROID_FIREBASE_JSON" ]; then
-            echo "$ANDROID_FIREBASE_JSON" | base64 --decode > android/app/google-services.json
-            echo "google-services.json created from environment variable."
+            echo $ANDROID_FIREBASE_JSON | base64 --decode > android/app/google-services.json
+            echo "google-services.json successfully created."
           else
-            echo "ANDROID_FIREBASE_JSON not found; using repository file."
+            echo "ANDROID_FIREBASE_JSON variable not found, using repository file."
           fi
 
       - name: Clean Flutter cache
@@ -42,35 +41,32 @@ workflows:
         script: |
           flutter pub get
 
-      - name: Set Gradle permission
+      - name: Set permissions for Gradle Wrapper
         script: |
-          chmod +x android/gradlew
+          if [ -f "android/gradlew" ]; then
+            chmod +x android/gradlew
+            echo "Gradlew permissions set."
+          else
+            echo "android/gradlew not found, skipping permission change..."
+          fi
 
       - name: Set up Keystore
         script: |
-          echo "$CM_KEYSTORE" | base64 --decode > /tmp/release.jks
+          echo $CM_KEYSTORE | base64 --decode > /tmp/release.jks
 
-      - name: Show signing SHA-1
+      - name: Get SHA-1
         script: |
-          keytool -list -v \
-            -keystore /tmp/release.jks \
-            -alias "$CM_KEY_ALIAS" \
-            -storepass "$CM_KEYSTORE_PASSWORD" \
-            | grep "SHA1"
+          keytool -list -v -keystore /tmp/release.jks -alias $CM_KEY_ALIAS -storepass $CM_KEYSTORE_PASSWORD
 
-      - name: Create signing properties
+      - name: Build Release APK
         script: |
-          cat > android/key.properties <<EOF
+          cat <<EOF > android/key.properties
           storePassword=$CM_KEYSTORE_PASSWORD
           keyPassword=$CM_KEY_PASSWORD
           keyAlias=$CM_KEY_ALIAS
           storeFile=/tmp/release.jks
           EOF
-
-      - name: Build small ARM64 Release APK
-        script: |
-          flutter build apk --release --target-platform android-arm64
+          flutter build apk --release
 
     artifacts:
-      - build/app/outputs/flutter-apk/app-release.apk
-      - build/app/outputs/mapping/release/mapping.txt
+      - build/app/outputs/flutter-apk/*.apk
