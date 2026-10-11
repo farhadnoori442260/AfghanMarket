@@ -15,7 +15,7 @@ workflows:
     environment:
       groups:
         - kalino_env
-      flutter: 3.24.5  # هماهنگ با نیاز pubspec.yaml (پشتیبانی از Dart >= 3.4.4)
+      flutter: 3.24.5  # هماهنگ با نیاز pubspec.yaml
       java: 17        # تنظیم جاوا 17 برای سازگاری با Gradle
 
     scripts:
@@ -58,15 +58,15 @@ workflows:
         script: |
           keytool -list -v -keystore /tmp/release.jks -alias $CM_KEY_ALIAS -storepass $CM_KEYSTORE_PASSWORD
 
-      - name: Build Release APK
+      - name: Build Release APK (Optimized size)
         script: |
           cat <<EOF > android/key.properties
           storePassword=$CM_KEYSTORE_PASSWORD
-          keyPassword=$CM_KEY_PASSWORD
+          keyPassword=$CM_KEYSTORE_PASSWORD
           keyAlias=$CM_KEY_ALIAS
           storeFile=/tmp/release.jks
           EOF
-          flutter build apk --release
+          flutter build apk --release --split-per-abi
 
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
