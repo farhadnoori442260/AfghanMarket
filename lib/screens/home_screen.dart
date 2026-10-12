@@ -137,29 +137,31 @@ class _HomeScreenState extends State<HomeScreen> {
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // نوار موقعیت مکانی با طراحی مدرن‌تر و ظریف‌تر
             InkWell(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
               onTap: () {
                 Navigator.of(context).pushNamed(LocationScreen.screenId);
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200, width: 1),
                 ),
                 child: _locationAutoFetchBar(context),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             const CategoryWidget(),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             FutureBuilder<List<String>>(
               future: _downloadBannerImageUrlList(),
               builder: (BuildContext context,
@@ -179,9 +181,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   return const SizedBox.shrink();
                 } else {
                   return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.symmetric(vertical: 4),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                       child: CarouselSlider.builder(
                         itemCount: snapshot.data!.length,
                         options: CarouselOptions(
@@ -216,7 +218,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
               },
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             const ProductListing(),
           ],
         ),
@@ -240,7 +242,7 @@ class LocationTextWidget extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         const Icon(
-          Icons.location_on,
+          Icons.location_on_rounded,
           size: 20,
           color: primaryColor,
         ),
@@ -258,7 +260,7 @@ class LocationTextWidget extends StatelessWidget {
           ),
         ),
         const Icon(
-          Icons.keyboard_arrow_down,
+          Icons.keyboard_arrow_down_rounded,
           size: 20,
           color: greyColor,
         ),
