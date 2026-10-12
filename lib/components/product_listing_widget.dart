@@ -44,8 +44,8 @@ class _ProductListingState extends State<ProductListing> {
       }
     }
 
-    return FutureBuilder<QuerySnapshot>(
-      future: query.get(),
+    return StreamBuilder<QuerySnapshot>(
+      stream: query.snapshots(),
       builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
         if (snapshot.hasError) {
           return Padding(
@@ -65,6 +65,7 @@ class _ProductListingState extends State<ProductListing> {
             child: Center(
               child: CircularProgressIndicator(
                 color: primaryColor,
+                strokeWidth: 2.5,
               ),
             ),
           );
@@ -72,22 +73,29 @@ class _ProductListingState extends State<ProductListing> {
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return Container(
-            padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 20),
+            padding: const EdgeInsets.symmetric(vertical: 50, horizontal: 20),
             width: double.infinity,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  CupertinoIcons.square_stack_3d_up_slash,
-                  size: 64,
-                  color: disabledColor.withOpacity(0.6),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    CupertinoIcons.square_stack_3d_up_slash,
+                    size: 48,
+                    color: Colors.grey[400],
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'msg_no_products_found'.tr(),
                   style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
                     color: greyMediumColor,
                   ),
                   textAlign: TextAlign.center,
@@ -98,17 +106,20 @@ class _ProductListingState extends State<ProductListing> {
         }
 
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (widget.isProductByCategory == null) ...[
-                Text(
-                  'title_recommendations'.tr(),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: blackColor,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  child: Text(
+                    'title_recommendations'.tr(),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: blackColor,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 14),
@@ -118,7 +129,7 @@ class _ProductListingState extends State<ProductListing> {
                 shrinkWrap: true,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  childAspectRatio: 0.72,
+                  childAspectRatio: 0.70,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
                 ),
