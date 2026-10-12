@@ -24,33 +24,60 @@ class Search {
         barTheme: Theme.of(context).copyWith(
           appBarTheme: const AppBarTheme(
             backgroundColor: whiteColor,
-            elevation: 0,
-            surfaceTintColor: primaryColor,
+            elevation: 0.5,
+            surfaceTintColor: whiteColor,
             iconTheme: IconThemeData(color: blackColor),
             actionsIconTheme: IconThemeData(color: blackColor),
+            titleSpacing: 0,
           ),
-          inputDecorationTheme: InputDecorationTheme(
+          inputDecorationTheme: const InputDecorationTheme(
             hintStyle: TextStyle(
               color: greyColor,
               fontSize: 14,
+              fontWeight: FontWeight.w400,
             ),
             border: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            enabledBorder: InputBorder.none,
+          ),
+          textTheme: const TextTheme(
+            titleLarge: TextStyle(
+              color: blackColor,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
         searchLabel: 'search_hint'.tr(),
         suggestion: const SingleChildScrollView(
-          child: ProductListing(),
+          physics: BouncingScrollPhysics(),
+          child: Padding(
+            padding: EdgeInsets.only(top: 8.0),
+            child: ProductListing(),
+          ),
         ),
         failure: Center(
           child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Text(
-              'no_product_found'.tr(),
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: greyColor,
-                fontSize: 16,
-              ),
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.search_off_rounded,
+                  size: 64,
+                  color: Colors.grey.shade400,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'no_product_found'.tr(),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: greyColor,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
