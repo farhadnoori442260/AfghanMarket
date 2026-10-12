@@ -26,7 +26,7 @@ class Auth {
   CollectionReference get messages =>
       FirebaseFirestore.instance.collection('messages');
 
-  /// بررسی وجود کاربر در دیتابیس و هدایت به صفحه موقعیت
+  /// بررسی وجود کاربر در دیتابیس و هدایت به صفحه موقعیت یا تکمیل مشخصات تذکره
   Future<void> getAdminCredentialPhoneNumber(
       BuildContext context, User? user) async {
     if (user == null) return;
@@ -34,8 +34,17 @@ class Auth {
     final DocumentSnapshot userDoc = await users.doc(user.uid).get();
 
     if (userDoc.exists) {
-      if (context.mounted) {
-        Navigator.pushReplacementNamed(context, LocationScreen.screenId);
+      final data = userDoc.data() as Map<String, dynamic>?;
+      // بررسی اینکه آیا نام و شماره تذکره ثبت شده است یا خیر
+      if (data != null && data['name'] != null && data['name'].toString().isNotEmpty) {
+        if (context.mounted) {
+          Navigator.pushReplacementNamed(context, LocationScreen.screenId);
+        }
+      } else {
+        // اگر پروفایل کامل نبود، هدایت به ثبت نام/تذکره
+        if (context.mounted) {
+          await registerWithPhoneNumber(user, context);
+        }
       }
     } else {
       if (context.mounted) {
@@ -44,21 +53,21 @@ class Auth {
     }
   }
 
-  /// ثبت اطلاعات کاربر تلفنی در Firestore
+  /// ثبت اطلاعات اولیه کاربر تلفنی در Firestore
   Future<void> registerWithPhoneNumber(User user, BuildContext context) async {
     final uid = user.uid;
     final mobileNo = user.phoneNumber ?? '';
-    final email = user.email ?? '';
 
     try {
       await users.doc(uid).set({
         'uid': uid,
         'mobile': mobileNo,
-        'email': email,
-        'name': user.displayName ?? '',
+        'email': '',
+        'name': '',
+        'tazkira': '', // فیلد مخصوص شماره تذکره برای افغانستان
         'address': '',
         'createdAt': FieldValue.serverTimestamp(),
-      });
+      }, SetOptions(merge: true));
 
       if (context.mounted) {
         Navigator.pushReplacementNamed(context, LocationScreen.screenId);
@@ -70,7 +79,7 @@ class Auth {
     }
   }
 
-  /// ارسال کد تایید پیامکی (OTP)
+  /// ارسال کد تایید پیامکی (OTP) با مدیریت خطای کامل
   Future<void> verifyPhoneNumber(BuildContext context, String number) async {
     loadingDialogBox(context, 'msg_please_wait'.tr());
 
@@ -87,9 +96,13 @@ class Auth {
         (FirebaseAuthException e) {
       if (context.mounted) Navigator.pop(context);
 
-      String errorMsg = 'msg_invalid_phone'.tr();
-      if (e.code != 'invalid-phone-number') {
-        errorMsg = e.message ?? e.code;
+      String errorMsg = 'خطا در ارسال کد تایید. لطفاً شماره را بررسی کنید.';
+      if (e.code == 'invalid-phone-number') {
+        errorMsg = 'شماره تلفن وارد شده معتبر نیست.';
+      } else if (e.code == 'too-many-requests') {
+        errorMsg = 'درخواست‌های بیش از حد مجاز. لطفاً بعداً تلاش کنید.';
+      } else if (e.message != null) {
+        errorMsg = e.message!;
       }
 
       if (context.mounted) {
@@ -126,7 +139,9 @@ class Auth {
       );
     } catch (e) {
       if (context.mounted) Navigator.pop(context);
-      if (kDebugMode) print(e.toString());
+      if (context.mounted) {
+        wrongDetailsAlertBox('خطا: ${e.toString()}', context);
+      }
     }
   }
 
@@ -210,6 +225,7 @@ class Auth {
                 'name': user.displayName ?? '',
                 'email': user.email ?? '',
                 'mobile': user.phoneNumber ?? '',
+                'tazkira': '',
                 'address': '',
                 'createdAt': FieldValue.serverTimestamp(),
               });
@@ -349,6 +365,7 @@ class Auth {
         'name': "$firstName $lastName".trim(),
         'email': email,
         'mobile': '',
+        'tazkira': '',
         'address': '',
         'createdAt': FieldValue.serverTimestamp(),
       });
