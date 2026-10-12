@@ -61,11 +61,12 @@ class SearchCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: whiteColor,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200, width: 1),
         boxShadow: [
           BoxShadow(
-            color: blackColor.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: blackColor.withOpacity(0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -91,7 +92,7 @@ class SearchCard extends StatelessWidget {
                   child: Container(
                     width: 100,
                     height: 100,
-                    color: scaffoldBgColor,
+                    color: Colors.grey[100],
                     child: imageUrl.isNotEmpty
                         ? Image.network(
                             imageUrl,
@@ -115,6 +116,7 @@ class SearchCard extends StatelessWidget {
                     height: 100,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -142,29 +144,27 @@ class SearchCard extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 6),
-                        Expanded(
-                          child: Text(
-                            product.description,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: greyColor,
-                              height: 1.3,
-                            ),
+                        Text(
+                          product.description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: greyColor,
+                            height: 1.3,
                           ),
                         ),
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             if (address.isNotEmpty)
                               Expanded(
                                 child: Row(
                                   children: [
                                     const Icon(
-                                      Icons.location_on_outlined,
+                                      Icons.location_on_rounded,
                                       size: 14,
-                                      color: greyMediumColor,
+                                      color: primaryColor,
                                     ),
                                     const SizedBox(width: 2),
                                     Expanded(
@@ -175,6 +175,7 @@ class SearchCard extends StatelessWidget {
                                         style: const TextStyle(
                                           fontSize: 11,
                                           color: greyMediumColor,
+                                          fontWeight: FontWeight.w500,
                                         ),
                                       ),
                                     ),
